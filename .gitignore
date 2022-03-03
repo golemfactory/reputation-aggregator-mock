@@ -13,3 +13,9 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+# Devlopment server data
+/data
+
+# Intalij configuration
+/.idea
