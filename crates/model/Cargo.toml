@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 derive_builder = "0.10.2"
-bigdecimal = "0.3.0"
+bigdecimal = "0.2.2"
 chrono = "0.4.19"
 serde_json = "1.0"

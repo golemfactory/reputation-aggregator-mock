@@ -1,6 +1,6 @@
-use derive_builder::*;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
+use derive_builder::*;
 use serde_json::Value as JsonValue;
 /// Agreement status report.
 ///
@@ -23,14 +23,18 @@ use serde_json::Value as JsonValue;
 #[builder(setter(into), pattern = "owned")]
 #[non_exhaustive]
 pub struct Status {
+    /// The amount of money that provider has requested.
     #[builder(setter(into), default)]
-    pub requested : BigDecimal,
+    pub requested: BigDecimal,
+    /// The amount of money that requestor has accepted.
     #[builder(setter(into), default)]
-    pub accepted : BigDecimal,
+    pub accepted: BigDecimal,
+    /// The amount of money the provider has confirmed that is paid.
     #[builder(setter(into), default)]
-    pub confirmed : BigDecimal,
-    pub ts : DateTime<Utc>,
-    /// Reserved for furuee use
+    pub confirmed: BigDecimal,
+    /// Event timestamp.
+    pub ts: DateTime<Utc>,
+    /// Reserved for future use
     #[builder(setter(skip))]
-    pub payment : Option<JsonValue>
+    pub payment: Option<JsonValue>,
 }
