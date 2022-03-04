@@ -6,6 +6,7 @@ use sqlx::types::Json;
 use std::io;
 
 mod dao;
+mod config;
 
 #[derive(Deserialize)]
 struct ListQuery {
