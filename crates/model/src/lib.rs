@@ -1,7 +1,9 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use derive_builder::*;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+
 /// Agreement status report.
 ///
 /// ```rust
@@ -19,7 +21,7 @@ use serde_json::Value as JsonValue;
 /// assert_eq!(status.confirmed, BigDecimal::zero())
 /// ```
 ///
-#[derive(Builder, Debug)]
+#[derive(Builder, Debug, Serialize, Deserialize)]
 #[builder(setter(into), pattern = "owned")]
 #[non_exhaustive]
 pub struct Status {
