@@ -18,9 +18,10 @@ pub struct Agreement {
 }
 
 impl StatusDao {
-    pub async fn connect() -> sqlx::Result<Self> {
+    pub async fn connect(url : String) -> sqlx::Result<Self> {
+        log::debug!("connect to {}", url);
         let pool =
-            Pool::<Postgres>::connect(std::env::var("DATABASE_URL").unwrap().as_str()).await?;
+            Pool::<Postgres>::connect(&url).await?;
         Ok(StatusDao { pool })
     }
 

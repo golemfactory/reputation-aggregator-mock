@@ -4,6 +4,9 @@ use actix_web::{get, web, App, HttpServer, Responder};
 use serde::Deserialize;
 use sqlx::types::Json;
 use std::io;
+use std::path::Path;
+use std::sync::Arc;
+use ::config::Config;
 
 mod dao;
 mod config;
@@ -53,18 +56,25 @@ async fn list_requestors(
 }
 
 #[actix_web::main]
-async fn main() -> io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     let _ = dotenv::dotenv().unwrap_or_default();
     env_logger::init();
+    let config = Arc::new(config::ReputationServerConfig::load()?);
+    log::debug!("config={:?}", config);
 
-    HttpServer::new(|| {
+    let bind_addr = config.api_listen.clone();
+
+    HttpServer::new(move || {
+        let config = config.clone();
         App::new()
-            .data_factory(|| dao::StatusDao::connect())
+            .data_factory(move || dao::StatusDao::connect(config.database_url.clone()))
             .service(list_providers)
             .service(list_provider_agreements)
             .service(list_requestors)
     })
-    .bind("127.0.0.1:8080")?
+    .bind(bind_addr)?
     .run()
-    .await
+    .await?;
+
+    Ok(())
 }

@@ -15,5 +15,6 @@ reputation-aggregator-model = { version = "0.1.0", path="crates/model" }
 serde= { version="1.0" }
 dotenv = "0.15.0"
 config = { version = "0.12", default-features=false, features=["json"]}
+anyhow = "1.0.55"
 
 [workspace]
