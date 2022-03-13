@@ -1,3 +1,7 @@
+#![deny(unsafe_code)]
+#![deny(missing_docs)]
+//! # Golem Reputation Aggregator Client Library
+//!
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use derive_builder::*;
@@ -35,8 +39,10 @@ pub struct Status {
     #[builder(setter(into), default)]
     pub confirmed: BigDecimal,
     /// Event timestamp.
+    #[builder(default = "Utc::now()")]
     pub ts: DateTime<Utc>,
     /// Reserved for future use
     #[builder(setter(skip))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub payment: Option<JsonValue>,
 }

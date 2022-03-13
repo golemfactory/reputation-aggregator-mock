@@ -1,15 +1,15 @@
 #![forbid(unsafe_code)]
 
+use ::config::Config;
 use actix_web::{get, web, App, HttpServer, Responder};
 use serde::Deserialize;
 use sqlx::types::Json;
 use std::io;
 use std::path::Path;
 use std::sync::Arc;
-use ::config::Config;
 
-mod dao;
 mod config;
+mod dao;
 
 #[derive(Deserialize)]
 struct ListQuery {
@@ -60,9 +60,15 @@ async fn main() -> anyhow::Result<()> {
     let _ = dotenv::dotenv().unwrap_or_default();
     env_logger::init();
     let config = Arc::new(config::ReputationServerConfig::load()?);
-    log::debug!("config={:?}", config);
 
-    let bind_addr = config.api_listen.clone();
+    let bind_addr = config.listen_on;
+
+    if config.apply_migrations {
+        dao::apply_migrations(&config.database_url).await?;
+        log::info!("migations applied");
+    } else {
+        log::info!("skip db migrations");
+    }
 
     HttpServer::new(move || {
         let config = config.clone();

@@ -1,9 +1,13 @@
+use anyhow::anyhow;
 use reputation_aggregator_model::{Status, StatusBuilder};
 use serde::{Deserialize, Serialize};
+use sqlx::migrate::Migrator;
 use sqlx::types::chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::types::BigDecimal;
 use sqlx::{query, PgPool, Pool, Postgres};
 use std::io;
+
+static MIGRATOR: Migrator = sqlx::migrate!();
 
 pub struct StatusDao {
     pool: PgPool,
@@ -18,10 +22,9 @@ pub struct Agreement {
 }
 
 impl StatusDao {
-    pub async fn connect(url : String) -> sqlx::Result<Self> {
+    pub async fn connect(url: String) -> sqlx::Result<Self> {
         log::debug!("connect to {}", url);
-        let pool =
-            Pool::<Postgres>::connect(&url).await?;
+        let pool = Pool::<Postgres>::connect(&url).await?;
         Ok(StatusDao { pool })
     }
 
@@ -115,4 +118,10 @@ impl StatusDao {
         ).execute(&self.pool).await?;
         Ok(())
     }
+}
+
+pub async fn apply_migrations(database_url: &str) -> anyhow::Result<()> {
+    let pool = Pool::<Postgres>::connect(&database_url).await?;
+    MIGRATOR.run(&pool).await?;
+    Ok(())
 }
