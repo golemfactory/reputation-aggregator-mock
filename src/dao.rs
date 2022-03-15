@@ -1,11 +1,9 @@
-use anyhow::anyhow;
 use reputation_aggregator_model::{Status, StatusBuilder};
 use serde::{Deserialize, Serialize};
 use sqlx::migrate::Migrator;
 use sqlx::types::chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::types::BigDecimal;
 use sqlx::{query, PgPool, Pool, Postgres};
-use std::io;
 
 static MIGRATOR: Migrator = sqlx::migrate!();
 
@@ -96,7 +94,7 @@ impl StatusDao {
     }
 
     pub async fn insert_status(
-        &mut self,
+        &self,
         role: &str,
         node_id: &str,
         agreement_id: &str,
