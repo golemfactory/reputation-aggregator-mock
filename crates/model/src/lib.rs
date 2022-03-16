@@ -1,5 +1,5 @@
 #![deny(unsafe_code)]
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 //! # Golem Reputation Aggregator Client Library
 //!
 use bigdecimal::BigDecimal;
@@ -46,3 +46,9 @@ pub struct Status {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub payment: Option<JsonValue>,
 }
+
+#[cfg(feature = "client")]
+mod client;
+
+#[cfg(feature = "client")]
+pub use client::*;

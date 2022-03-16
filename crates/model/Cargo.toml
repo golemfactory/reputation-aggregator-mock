@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default=["client"]
+client=["awc", "thiserror"]
+
 
 [dependencies]
 derive_builder = "0.10.2"
@@ -11,3 +15,8 @@ bigdecimal = {version = "0.2.2", features=["serde"]}
 chrono = {version = "0.4.19", features=["serde"]}
 serde_json = "1.0"
 serde={ version = "1.0", features=["derive"]}
+awc = { version = "3.0.0", optional = true }
+thiserror = { version = "1.0.30", optional = true }
+
+[dev-dependencies]
+actix-rt = "2.7.0"
