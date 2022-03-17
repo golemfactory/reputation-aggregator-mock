@@ -2,7 +2,7 @@ use crate::dao;
 use crate::rest::ListQuery;
 use actix_web::web::ServiceConfig;
 use actix_web::{get, post, web, HttpResponse, Responder};
-use reputation_aggregator_model::Status;
+use reputation_aggregator_model::{NodeId, Status};
 
 #[get("/provider")]
 async fn list(
@@ -30,16 +30,16 @@ async fn list_agreements(
     Ok(web::Json(agreements))
 }
 
-#[post("/provider/{node_id}/{agreement_id}")]
+#[post("/provider/{node_id}/{agreement_id}/{peer_id}")]
 async fn update_status(
     _: web::Query<ListQuery>,
-    path: web::Path<(String, String)>,
+    path: web::Path<(NodeId, String, NodeId)>,
     dao: web::Data<dao::StatusDao>,
     status: web::Json<Status>,
 ) -> impl Responder {
-    let (node_id, agreement_id) = path.into_inner();
+    let (node_id, agreement_id, peer_id) = path.into_inner();
     if let Err(e) = dao
-        .insert_status("P", &node_id, &agreement_id, &status)
+        .insert_status("P", node_id, &agreement_id, peer_id, &status)
         .await
     {
         log::error!(

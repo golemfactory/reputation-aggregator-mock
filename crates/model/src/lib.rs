@@ -1,5 +1,5 @@
 #![deny(unsafe_code)]
-//#![deny(missing_docs)]
+#![deny(missing_docs)]
 //! # Golem Reputation Aggregator Client Library
 //!
 use bigdecimal::BigDecimal;
@@ -7,6 +7,7 @@ use chrono::{DateTime, Utc};
 use derive_builder::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+pub use ya_client_model::NodeId;
 
 /// Agreement status report.
 ///

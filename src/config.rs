@@ -1,4 +1,4 @@
-use ::config::{Config, ConfigBuilder, Environment, File, FileFormat};
+use ::config::{Config, Environment, File};
 use serde::Deserialize;
 use std::net::SocketAddr;
 

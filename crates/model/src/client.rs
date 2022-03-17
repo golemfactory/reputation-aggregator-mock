@@ -2,14 +2,16 @@ use crate::Status;
 use awc::error::SendRequestError;
 use awc::http::Uri;
 use thiserror::Error;
+use ya_client_model::NodeId;
 
 ///
 /// # Example
-/// ```
+/// ```rust
 /// use reputation_aggregator_model::{RepuAggrClient, Status};
 /// let client = RepuAggrClient::with_url("http://reputation.dev.golem.network").unwrap();
 ///
-/// client.provider_report(node_id, agreement_id, StatusBuilder::default().requested(10).build().unwrap()).await.unwrap();
+/// client.provider_report(node_id, agreement_id, peer_id, StatusBuilder::default().requested(10).build().unwrap()).await.unwrap();
+///```
 ///
 #[derive(Clone)]
 pub struct RepuAggrClient {
@@ -35,8 +37,9 @@ impl RepuAggrClient {
     async fn send_report(
         &self,
         role: &str,
-        node_id: &str,
+        node_id: NodeId,
         agreement_id: &str,
+        peer_id: NodeId,
         status: Status,
     ) -> Result<()> {
         // TODO add checks
@@ -48,18 +51,20 @@ impl RepuAggrClient {
 
     pub async fn provider_report(
         &self,
-        node_id: &str,
+        node_id: NodeId,
         agreement_id: &str,
+        peer_id : NodeId,
         status: Status,
     ) -> Result<()> {
-        self.send_report("provider", node_id, agreement_id, status)
+        self.send_report("provider", node_id, agreement_id, peer_id, status)
             .await
     }
 
     pub async fn requestor_report(
         &self,
-        node_id: &str,
+        node_id: NodeId,
         agreement_id: &str,
+        peer_id : NodeId,
         status: Status,
     ) -> Result<()> {
         self.send_report("requestor", node_id, agreement_id, status)

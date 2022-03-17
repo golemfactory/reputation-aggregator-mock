@@ -1,9 +1,9 @@
-use reputation_aggregator_model::{Status, StatusBuilder};
+use reputation_aggregator_model::{NodeId, Status, StatusBuilder};
 use serde::{Deserialize, Serialize};
 use sqlx::migrate::Migrator;
 use sqlx::types::chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::types::BigDecimal;
-use sqlx::{query, PgPool, Pool, Postgres};
+use sqlx::{PgPool, Pool, Postgres};
 
 static MIGRATOR: Migrator = sqlx::migrate!();
 
@@ -15,6 +15,7 @@ pub struct StatusDao {
 #[serde(rename_all = "camelCase")]
 pub struct Agreement {
     agreement_id: String,
+    peer_id: String,
     created_ts: DateTime<Utc>,
     status: Status,
 }
@@ -56,6 +57,7 @@ impl StatusDao {
     ) -> sqlx::Result<Vec<Agreement>> {
         struct AgreementRow {
             agreement_id: String,
+            peer_id : Option<String>,
             created_ts: NaiveDateTime,
             updated_ts: NaiveDateTime,
             requested: BigDecimal,
@@ -66,7 +68,7 @@ impl StatusDao {
         let agreement_rows = sqlx::query_as!(
             AgreementRow,
             r#"
-            SELECT agreement_id, created_ts, updated_ts,
+            SELECT agreement_id, peer_id, created_ts, updated_ts,
                 requested, accepted, confirmed
              FROM AGREEMENT_STATUS where ROLE_ID = $1 and NODE_ID=$2"#,
             role_id,
@@ -80,6 +82,7 @@ impl StatusDao {
             .map(|agreement_row: AgreementRow| {
                 Ok(Agreement {
                     agreement_id: agreement_row.agreement_id,
+                    peer_id: agreement_row.peer_id.unwrap_or_default(),
                     created_ts: DateTime::from_utc(agreement_row.created_ts, Utc),
                     status: StatusBuilder::default()
                         .requested(agreement_row.requested)
@@ -96,23 +99,27 @@ impl StatusDao {
     pub async fn insert_status(
         &self,
         role: &str,
-        node_id: &str,
+        node_id: NodeId,
         agreement_id: &str,
+        peer_id:NodeId,
         status: &Status,
     ) -> sqlx::Result<()> {
         sqlx::query!(r#"
-            INSERT INTO AGREEMENT_STATUS(role_id, node_id, agreement_id, requested, accepted, confirmed)
-            VALUES($1, $2, $3, $4, $5, $6)
+            INSERT INTO AGREEMENT_STATUS(role_id, node_id, agreement_id, requested,
+            accepted, confirmed, peer_id, reported_ts)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT(role_id, node_id, agreement_id)
             DO
                 UPDATE SET
                     requested = $4,
                     accepted = $5,
                     confirmed = $6,
-                    updated_ts = CURRENT_TIMESTAMP
+                    updated_ts = CURRENT_TIMESTAMP,
+                    reported_ts = $8
         "#,
-            role, node_id, agreement_id,
-            status.requested, status.accepted, status.confirmed
+            role, node_id.to_string(), agreement_id,
+            status.requested, status.accepted, status.confirmed,
+            peer_id.to_string(), status.ts
         ).execute(&self.pool).await?;
         Ok(())
     }

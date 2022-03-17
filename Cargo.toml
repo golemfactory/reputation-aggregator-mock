@@ -20,5 +20,13 @@ serde= { version="1.0" }
 dotenv = "0.15.0"
 config = { version = "0.12", default-features=false, features=["json"]}
 anyhow = "1.0.55"
+actix-web-static-files = "4.0"
+static-files = "0.2.1"
+tracing-actix-web = "0.5"
+tracing = "0.1"
+tracing-subscriber="0.3.9"
+
+[build-dependencies]
+static-files = "0.2.1"
 
 [workspace]
