@@ -28,6 +28,8 @@ pub enum RepuClientError {
     /// Http transport error.
     #[error("send request error {0}")]
     SendRequestError(#[from] SendRequestError),
+    #[error("{0}")]
+    ProcessingError(String)
 }
 
 /// A specialized Result type for client operations.
@@ -54,8 +56,10 @@ impl RepuAggrClient {
             "{}/{}/{}/{}/{}",
             self.base_url, role, node_id, agreement_id, peer_id
         );
-        self.client.post(url).send_json(&status).await?;
-        // TODO check if status 200 or 201
+        let response = self.client.post(url).send_json(&status).await?;
+        if !response.status().is_success() {
+            return Err(RepuClientError::ProcessingError(format!("bad response: {}", response.status())))
+        }
         Ok(())
     }
 
