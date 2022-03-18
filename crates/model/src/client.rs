@@ -1,6 +1,9 @@
 use crate::Status;
+
+#[cfg(feature = "client-old")]
+use awc_old as awc;
+
 use awc::error::SendRequestError;
-use awc::http::Uri;
 use thiserror::Error;
 use ya_client_model::NodeId;
 
@@ -19,14 +22,18 @@ pub struct RepuAggrClient {
     base_url: String,
 }
 
+/// Error type.
 #[derive(Error, Debug)]
 pub enum RepuClientError {
+    /// Http transport error.
     #[error("send request error {0}")]
     SendRequestError(#[from] SendRequestError),
 }
 
+/// A specialized Result type for client operations.
 pub type Result<T> = std::result::Result<T, RepuClientError>;
 
+#[allow(missing_docs)]
 impl RepuAggrClient {
     pub fn with_url(base_url: impl Into<String>) -> Result<Self> {
         let client = awc::Client::new();
@@ -43,7 +50,10 @@ impl RepuAggrClient {
         status: Status,
     ) -> Result<()> {
         // TODO add checks
-        let url = format!("{}/{}/{}/{}", self.base_url, role, node_id, agreement_id);
+        let url = format!(
+            "{}/{}/{}/{}/{}",
+            self.base_url, role, node_id, agreement_id, peer_id
+        );
         self.client.post(url).send_json(&status).await?;
         // TODO check if status 200 or 201
         Ok(())
@@ -53,7 +63,7 @@ impl RepuAggrClient {
         &self,
         node_id: NodeId,
         agreement_id: &str,
-        peer_id : NodeId,
+        peer_id: NodeId,
         status: Status,
     ) -> Result<()> {
         self.send_report("provider", node_id, agreement_id, peer_id, status)
@@ -64,10 +74,10 @@ impl RepuAggrClient {
         &self,
         node_id: NodeId,
         agreement_id: &str,
-        peer_id : NodeId,
+        peer_id: NodeId,
         status: Status,
     ) -> Result<()> {
-        self.send_report("requestor", node_id, agreement_id, status)
+        self.send_report("requestor", node_id, agreement_id, peer_id, status)
             .await
     }
 }

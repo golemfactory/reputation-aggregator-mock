@@ -7,6 +7,7 @@ edition = "2021"
 [features]
 default=[]
 client=["awc", "thiserror"]
+client-old=["awc-old", "thiserror"]
 
 
 [dependencies]
@@ -16,8 +17,18 @@ chrono = {version = "0.4.19", features=["serde"]}
 serde_json = "1.0"
 serde={ version = "1.0", features=["derive"]}
 awc = { version = "3.0.0", optional = true }
+awc-old = { package="awc", version = "2", optional = true }
 thiserror = { version = "1.0.30", optional = true }
 ya-client-model = { version = "0.3.2", default-features=false }
 
 [dev-dependencies]
+log = "0.4.14"
+env_logger = "0.9.0"
 actix-rt = "2.7.0"
+old-actix-rt = { package="actix-rt", version = "1.1"}
+ya-client = "0.5.2"
+
+
+[[example]]
+name = "send_some"
+required-features  = ["client-old"]

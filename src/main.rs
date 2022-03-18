@@ -6,8 +6,8 @@ use actix_web::{App, HttpServer};
 use actix_web_static_files::ResourceFiles;
 use tracing::Level;
 use tracing_actix_web::TracingLogger;
-use tracing_subscriber::FmtSubscriber;
 use tracing_subscriber::prelude::*;
+use tracing_subscriber::FmtSubscriber;
 
 mod config;
 mod dao;
@@ -40,7 +40,8 @@ async fn main() -> anyhow::Result<()> {
         let config = config.clone();
         let generated = generate();
 
-        App::new().wrap(TracingLogger::default())
+        App::new()
+            .wrap(TracingLogger::default())
             .data_factory(move || dao::StatusDao::connect(config.database_url.clone()))
             .configure(rest::configure)
             .service(ResourceFiles::new("/", generated))

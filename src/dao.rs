@@ -57,7 +57,7 @@ impl StatusDao {
     ) -> sqlx::Result<Vec<Agreement>> {
         struct AgreementRow {
             agreement_id: String,
-            peer_id : Option<String>,
+            peer_id: Option<String>,
             created_ts: NaiveDateTime,
             updated_ts: NaiveDateTime,
             requested: BigDecimal,
@@ -101,10 +101,11 @@ impl StatusDao {
         role: &str,
         node_id: NodeId,
         agreement_id: &str,
-        peer_id:NodeId,
+        peer_id: NodeId,
         status: &Status,
     ) -> sqlx::Result<()> {
-        sqlx::query!(r#"
+        sqlx::query!(
+            r#"
             INSERT INTO AGREEMENT_STATUS(role_id, node_id, agreement_id, requested,
             accepted, confirmed, peer_id, reported_ts)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8)
@@ -117,10 +118,17 @@ impl StatusDao {
                     updated_ts = CURRENT_TIMESTAMP,
                     reported_ts = $8
         "#,
-            role, node_id.to_string(), agreement_id,
-            status.requested, status.accepted, status.confirmed,
-            peer_id.to_string(), status.ts
-        ).execute(&self.pool).await?;
+            role,
+            node_id.to_string(),
+            agreement_id,
+            status.requested,
+            status.accepted,
+            status.confirmed,
+            peer_id.to_string(),
+            status.ts
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 }

@@ -48,8 +48,8 @@ pub struct Status {
     pub payment: Option<JsonValue>,
 }
 
-#[cfg(feature = "client")]
+#[cfg(any(feature = "client", feature = "client-old"))]
 mod client;
 
-#[cfg(feature = "client")]
+#[cfg(any(feature = "client", feature = "client-old"))]
 pub use client::*;
