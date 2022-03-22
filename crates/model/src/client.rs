@@ -28,6 +28,7 @@ pub enum RepuClientError {
     /// Http transport error.
     #[error("send request error {0}")]
     SendRequestError(#[from] SendRequestError),
+    /// Server responds with communication error.
     #[error("{0}")]
     ProcessingError(String)
 }
