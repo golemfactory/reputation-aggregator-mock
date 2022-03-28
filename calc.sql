@@ -11,8 +11,8 @@ Refresh aggregates:
     There are no clever optimalizations here - everything is recalculated.
     
 Get score
-    SELECT calc.standarized_score('P', '0xabc123...')  # provider
-    SELECT calc.standarized_score('R', '0xabc123...')  # requestor
+    SELECT calc.standard_score('P', '0xabc123...')  # provider
+    SELECT calc.standard_score('R', '0xabc123...')  # requestor
 
 */
 
@@ -122,7 +122,7 @@ agg_metrics AS (
 SELECT	rs.node_id,
 	rs.role_id,
 	round(rs.raw_score, 4) AS raw_score,
-	round((rs.raw_score - am.avg) / am.stddev, 4) AS standarized_score
+	round((rs.raw_score - am.avg) / am.stddev, 4) AS standard_score
 FROM	raw_score 	rs
 JOIN	agg_metrics 	am
     ON	rs.role_id = am.role_id
@@ -140,10 +140,10 @@ END;
 $fff$
 ;
 
-CREATE FUNCTION standarized_score(role_id CHAR(1), node_id VARCHAR(42)) RETURNS numeric
+CREATE FUNCTION standard_score(role_id CHAR(1), node_id VARCHAR(42)) RETURNS numeric
 LANGUAGE SQL
 AS $fff$
-	SELECT 	standarized_score
+	SELECT 	standard_score
 	FROM	calc.node_score ns
 	WHERE	(ns.role_id, ns.node_id) = ($1, $2);
 $fff$
