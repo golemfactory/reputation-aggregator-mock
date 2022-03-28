@@ -20,6 +20,10 @@ pub struct Agreement {
     status: Status,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StandardScore(String);
+
 impl StatusDao {
     pub async fn connect(url: String) -> sqlx::Result<Self> {
         log::debug!("connect to {}", url);
@@ -130,6 +134,23 @@ impl StatusDao {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    pub async fn standard_score(
+        &self,
+        role_id: &str,
+        node_id: &str,
+    ) -> sqlx::Result<StandardScore> {
+        let standard_score = sqlx::query_as!(
+            StandardScore,
+            r#"SELECT CALC.STANDARD_SCORE($1, $2)"#,
+            role_id,
+            node_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(standard_score)
     }
 }
 
