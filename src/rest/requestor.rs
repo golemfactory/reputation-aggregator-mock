@@ -30,7 +30,7 @@ async fn list_agreements(
     Ok(web::Json(agreements))
 }
 
-#[post("/requestor/{node_id}/{agreement_id}")]
+#[post("/requestor/{node_id}/{agreement_id}/{peer_id}")]
 async fn update_status(
     _: web::Query<ListQuery>,
     path: web::Path<(NodeId, String, NodeId)>,

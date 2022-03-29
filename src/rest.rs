@@ -3,6 +3,7 @@ use serde::Deserialize;
 
 mod provider;
 mod requestor;
+mod score;
 
 #[derive(Deserialize)]
 struct ListQuery {
@@ -13,5 +14,6 @@ struct ListQuery {
 pub fn configure(config: &mut ServiceConfig) {
     config
         .configure(provider::configure)
-        .configure(requestor::configure);
+        .configure(requestor::configure)
+        .configure(score::configure);
 }
