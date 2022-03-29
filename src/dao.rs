@@ -22,7 +22,9 @@ pub struct Agreement {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StandardScore(String);
+pub struct StandardScore {
+    pub score: Option<BigDecimal>,
+}
 
 impl StatusDao {
     pub async fn connect(url: String) -> sqlx::Result<Self> {
@@ -143,7 +145,7 @@ impl StatusDao {
     ) -> sqlx::Result<StandardScore> {
         let standard_score = sqlx::query_as!(
             StandardScore,
-            r#"SELECT CALC.STANDARD_SCORE($1, $2)"#,
+            r#"SELECT CALC.STANDARD_SCORE($1, $2) as score"#,
             role_id,
             node_id
         )
