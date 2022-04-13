@@ -23,14 +23,20 @@ SET search_path TO calc;
 -- Per-agreement aggregate
 CREATE MATERIALIZED VIEW agreement AS
 WITH
+prefiltered_agreement_status AS (
+        --  NOTE: The only purpose of this CTE is to have a single place where we can
+        --  add things like "WHERE updated_ts > [some date]" etc, for the testing/debuging purposes.
+	SELECT	*
+	FROM	public.agreement_status
+),
 provider AS (
     	SELECT 	*
-	FROM 	public.agreement_status
+	FROM 	prefiltered_agreement_status
 	WHERE	role_id = 'P'
 ),
 requestor AS (
     	SELECT 	*
-	FROM 	public.agreement_status
+	FROM 	prefiltered_agreement_status
 	WHERE	role_id = 'R'
 ),
 base_agg AS (
@@ -42,7 +48,8 @@ base_agg AS (
 		coalesce(r.node_id, p.peer_id) AS r_id,
 		coalesce((p.requested + r.requested)/2, p.requested, r.requested) AS requested,
 		coalesce((p.accepted  + r.accepted) /2, p.accepted,  r.accepted)  AS accepted,
-		coalesce((p.confirmed + r.confirmed)/2, p.confirmed, r.confirmed) AS confirmed
+		coalesce((p.confirmed + r.confirmed)/2, p.confirmed, r.confirmed) AS confirmed,
+		greatest(p.updated_ts, r.updated_ts) AS updated_ts
 	FROM	provider  p
 	FULL
 	OUTER
@@ -62,6 +69,8 @@ agreement_type AS (
 		  	THEN 'BAD_REQUESTOR'
 			WHEN requested > accepted AND accepted > 0
 		  	THEN 'AGREEMENT_BROKEN'
+			WHEN requested = 0
+			THEN 'AGREEMENT_CANCELLED'
 			WHEN accepted = 0
 		  	THEN 'AGREEMENT_FAILED'
 			ELSE '???'
@@ -83,15 +92,13 @@ array_scores AS (
 			WHEN agreement_result = 'AGREEMENT_BROKEN'
 			THEN ARRAY[accepted * 0.9, accepted * 0.9]
 			WHEN agreement_result = 'AGREEMENT_FAILED'
-			-- TODO: this is the current "average accepted amount for paid agreement * -0.1"
-			--	 we'll want to update this in the future (or just use some aggregate instead of
-			--	 a hardcoded value)
-			THEN ARRAY[-0.024, -0.024]
+			-- TODO: this is just some arbitrary number
+			THEN ARRAY[-0.01, -0.01]
 			ELSE ARRAY[0, 0]
 		END AS scores
 	FROM	agreement_type at
 )
-SELECT	a.agreement_id, a.p_id, a.r_id, a.requested, a.accepted, a.confirmed, a.agreement_result,
+SELECT	a.agreement_id, a.p_id, a.r_id, a.requested, a.accepted, a.confirmed, a.agreement_result, a.updated_ts,
 	scores[1] AS p_score,
 	scores[2] AS r_score
 FROM	array_scores a
@@ -121,8 +128,8 @@ agg_metrics AS (
 )
 SELECT	rs.node_id,
 	rs.role_id,
-	round(rs.raw_score, 4) AS raw_score,
-	round((rs.raw_score - am.avg) / am.stddev, 4) AS standard_score
+	round(rs.raw_score, 8) AS raw_score,
+	round((rs.raw_score - am.avg) / am.stddev, 8) AS standard_score
 FROM	raw_score 	rs
 JOIN	agg_metrics 	am
     ON	rs.role_id = am.role_id
