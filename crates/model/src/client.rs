@@ -1,4 +1,4 @@
-use crate::Status;
+use crate::{AgreementInfo, Status, ReportResult};
 
 #[cfg(feature = "client-old")]
 use awc_old as awc;
@@ -6,6 +6,20 @@ use awc_old as awc;
 use awc::error::SendRequestError;
 use thiserror::Error;
 use ya_client_model::NodeId;
+
+enum AgreementRole {
+    Provider,
+    Requestor,
+}
+
+impl AgreementRole {
+    fn as_path(&self) -> &str {
+        match self {
+            Self::Provider => "/provider",
+            Self::Requestor => "/requestor",
+        }
+    }
+}
 
 ///
 /// # Example
@@ -30,7 +44,7 @@ pub enum RepuClientError {
     SendRequestError(#[from] SendRequestError),
     /// Server responds with communication error.
     #[error("{0}")]
-    ProcessingError(String)
+    ProcessingError(String),
 }
 
 /// A specialized Result type for client operations.
@@ -44,45 +58,50 @@ impl RepuAggrClient {
         Ok(RepuAggrClient { client, base_url })
     }
 
-    async fn send_report(
+    pub async fn agreement(
         &self,
-        role: &str,
+        role: AgreementRole,
         node_id: NodeId,
         agreement_id: &str,
-        peer_id: NodeId,
-        status: Status,
+        agreement: AgreementInfo,
     ) -> Result<()> {
-        // TODO add checks
         let url = format!(
-            "{}/{}/{}/{}/{}",
-            self.base_url, role, node_id, agreement_id, peer_id
+            "{}{}/{node_id}/agreement/{agreement_id}",
+            self.base_url,
+            role.as_path()
         );
         let response = self.client.post(url).send_json(&status).await?;
         if !response.status().is_success() {
-            return Err(RepuClientError::ProcessingError(format!("bad response: {}", response.status())))
+            return Err(RepuClientError::ProcessingError(format!(
+                "bad response: {}",
+                response.status()
+            )));
         }
         Ok(())
     }
 
-    pub async fn provider_report(
+    pub async fn report(
         &self,
+        role: AgreementRole,
         node_id: NodeId,
         agreement_id: &str,
         peer_id: NodeId,
         status: Status,
-    ) -> Result<()> {
-        self.send_report("provider", node_id, agreement_id, peer_id, status)
-            .await
-    }
+    ) -> Result<ReportResult> {
+        // TODO add checks
+        let base_url = &self.base_url;
+        let role_path = role.as_path();
+        let url = format!(
+            "{base_url}{role_path}/{node_id}/agreement/{agreement_id}/status"
+        );
+        let response = self.client.post(url).send_json(&status).await?;
+        if !response.status().is_success() {
+            return Err(RepuClientError::ProcessingError(format!(
+                "bad response: {}",
+                response.status()
+            )));
+        }
 
-    pub async fn requestor_report(
-        &self,
-        node_id: NodeId,
-        agreement_id: &str,
-        peer_id: NodeId,
-        status: Status,
-    ) -> Result<()> {
-        self.send_report("requestor", node_id, agreement_id, peer_id, status)
-            .await
+        Ok(())
     }
 }
