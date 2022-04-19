@@ -73,11 +73,11 @@ pub struct AgreementInfo {
     pub payment_platform: String,
     /// payment receipt account
     pub payment_address: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     /// Offer `golem.node.debug.subnet`
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     subnet: Option<String>,
-    /// Demand `golem.srv.comp.task_package`
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Demand `golem.srv.comp.task_package`
     task_package: Option<String>,
 }
 
