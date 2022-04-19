@@ -1,8 +1,7 @@
 use actix_web::web::ServiceConfig;
 use serde::Deserialize;
 
-mod provider;
-mod requestor;
+mod report;
 mod score;
 
 #[derive(Deserialize)]
@@ -13,7 +12,6 @@ struct ListQuery {
 
 pub fn configure(config: &mut ServiceConfig) {
     config
-        .configure(provider::configure)
-        .configure(requestor::configure)
+        .configure(report::configure)
         .configure(score::configure);
 }

@@ -75,10 +75,10 @@ pub struct AgreementInfo {
     pub payment_address: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     /// Offer `golem.node.debug.subnet`
-    subnet: Option<String>,
+    pub subnet: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     /// Demand `golem.srv.comp.task_package`
-    task_package: Option<String>,
+    pub task_package: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -92,11 +92,9 @@ pub enum ReportResult {
 }
 
 impl ReportResult {
-
     pub fn is_unknown_agreement(&self) -> bool {
         matches!(self, Self::UnknownAgreement {})
     }
-
 }
 
 #[cfg(any(feature = "client", feature = "client-old"))]

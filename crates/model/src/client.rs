@@ -1,4 +1,4 @@
-use crate::{AgreementInfo, Status, ReportResult};
+use crate::{AgreementInfo, ReportResult, Status};
 
 #[cfg(feature = "client-old")]
 use awc_old as awc;
@@ -91,9 +91,7 @@ impl RepuAggrClient {
         // TODO add checks
         let base_url = &self.base_url;
         let role_path = role.as_path();
-        let url = format!(
-            "{base_url}{role_path}/{node_id}/agreement/{agreement_id}/status"
-        );
+        let url = format!("{base_url}{role_path}/{node_id}/agreement/{agreement_id}/status");
         let response = self.client.post(url).send_json(&status).await?;
         if !response.status().is_success() {
             return Err(RepuClientError::ProcessingError(format!(
