@@ -7,7 +7,7 @@ use awc::error::SendRequestError;
 use thiserror::Error;
 use ya_client_model::NodeId;
 
-enum AgreementRole {
+pub enum AgreementRole {
     Provider,
     Requestor,
 }
@@ -70,7 +70,7 @@ impl RepuAggrClient {
             self.base_url,
             role.as_path()
         );
-        let response = self.client.post(url).send_json(&status).await?;
+        let response = self.client.post(url).send_json(&agreement).await?;
         if !response.status().is_success() {
             return Err(RepuClientError::ProcessingError(format!(
                 "bad response: {}",
@@ -85,14 +85,13 @@ impl RepuAggrClient {
         role: AgreementRole,
         node_id: NodeId,
         agreement_id: &str,
-        peer_id: NodeId,
         status: Status,
     ) -> Result<ReportResult> {
         // TODO add checks
         let base_url = &self.base_url;
         let role_path = role.as_path();
         let url = format!("{base_url}{role_path}/{node_id}/agreement/{agreement_id}/status");
-        let response = self.client.post(url).send_json(&status).await?;
+        let mut response = self.client.post(url).send_json(&status).await?;
         if !response.status().is_success() {
             return Err(RepuClientError::ProcessingError(format!(
                 "bad response: {}",
@@ -100,6 +99,6 @@ impl RepuAggrClient {
             )));
         }
 
-        Ok(())
+        Ok(response.json().await.map_err(|e| RepuClientError::ProcessingError(e.to_string()))?)
     }
 }
