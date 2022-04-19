@@ -26,6 +26,8 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
       - uses: actions-rs/cargo@v1
+        env:
+          SQLX_OFFLINE: true
         with:
           command: check
           args: --workspace
