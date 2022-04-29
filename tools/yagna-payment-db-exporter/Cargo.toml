@@ -15,7 +15,7 @@ futures = "0.3.21"
 
 [dependencies.sqlx]
 version = "0.5.11"
-features = ["runtime-actix-rustls", "sqlite", "chrono", "bigdecimal"]
+features = ["runtime-actix-rustls", "sqlite", "chrono", "bigdecimal", "offline"]
 
 [dependencies.reputation-aggregator-model]
 version = "0.1"

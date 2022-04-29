@@ -1,0 +1,63 @@
+{
+  "db": "SQLite",
+  "d163958c1b33813d1b4e9f1450932c99407c6cc527118ddf1a68b6fa22fe108b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "role",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "owner_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "peer_id",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "total_amount_due",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "total_amount_accepted",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "total_amount_paid",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "updated_ts",
+          "ordinal": 7,
+          "type_info": "Datetime"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "\n        SELECT id, role, owner_id, peer_id,\n            total_amount_due, total_amount_accepted, total_amount_paid,\n            updated_ts\n        FROM pay_agreement"
+  }
+}
