@@ -1,3 +1,120 @@
 {
-  "db": "PostgreSQL"
+  "db": "PostgreSQL",
+  "6140c0e601e250aa2705a691134551918a52d34a48ca074f055c911bfd732fe6": {
+    "describe": {
+      "columns": [
+        {
+          "name": "node_id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar"
+        ]
+      }
+    },
+    "query": "SELECT distinct node_id FROM AGREEMENT_STATUS where ROLE_ID = $1"
+  },
+  "66de96d330b58d5fd201559180a5abc92450809c27939e58539edb028bd16ea1": {
+    "describe": {
+      "columns": [
+        {
+          "name": "agreement_id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "peer_id",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "created_ts",
+          "ordinal": 2,
+          "type_info": "Timestamp"
+        },
+        {
+          "name": "updated_ts",
+          "ordinal": 3,
+          "type_info": "Timestamp"
+        },
+        {
+          "name": "requested",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "accepted",
+          "ordinal": 5,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "confirmed",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            SELECT agreement_id, peer_id, created_ts, updated_ts,\n                requested, accepted, confirmed\n             FROM AGREEMENT_STATUS where ROLE_ID = $1 and NODE_ID=$2"
+  },
+  "a4eb7b08e65eebe2d2d69d8bb8ef1fe2404822a978ad04115df64e6af9c3c001": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Varchar",
+          "Varchar",
+          "Numeric",
+          "Numeric",
+          "Numeric",
+          "Varchar",
+          "Timestamptz"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO AGREEMENT_STATUS(role_id, node_id, agreement_id, requested,\n            accepted, confirmed, peer_id, reported_ts)\n            VALUES($1, $2, $3, $4, $5, $6, $7, $8)\n            ON CONFLICT(role_id, node_id, agreement_id)\n            DO\n                UPDATE SET\n                    requested = $4,\n                    accepted = $5,\n                    confirmed = $6,\n                    updated_ts = CURRENT_TIMESTAMP,\n                    reported_ts = $8\n        "
+  },
+  "c83e4f89ddfef3f0808fa420eb4a134b49962a0732781ddb36a1e1c58919f329": {
+    "describe": {
+      "columns": [
+        {
+          "name": "score",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "SELECT CALC.STANDARD_SCORE($1, $2) as score"
+  }
 }
