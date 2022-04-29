@@ -24,10 +24,19 @@ SET search_path TO calc;
 CREATE MATERIALIZED VIEW agreement AS
 WITH
 prefiltered_agreement_status AS (
-        --  NOTE: The only purpose of this CTE is to have a single place where we can
-        --  add things like "WHERE updated_ts > [some date]" etc, for the testing/debuging purposes.
-	SELECT	*
-	FROM	public.agreement_status
+        SELECT  s.role_id,
+                s.node_id,
+                s.agreement_id,
+                s.requested,
+                s.accepted,
+                s.confirmed,
+                s.created_ts,
+                s.updated_ts,
+                s.reported_ts,
+                d.peer_id
+        FROM    public.agreement_status  s
+        JOIN    public.agreement_details d
+            ON  s.agreement_id = d.agreement_id
 ),
 provider AS (
     	SELECT 	*
