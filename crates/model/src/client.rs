@@ -7,6 +7,7 @@ use awc::error::SendRequestError;
 use thiserror::Error;
 use ya_client_model::NodeId;
 
+#[derive(Clone)]
 pub enum AgreementRole {
     Provider,
     Requestor,

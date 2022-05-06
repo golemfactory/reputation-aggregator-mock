@@ -26,7 +26,7 @@ pub use ya_client_model::NodeId;
 /// assert_eq!(status.confirmed, BigDecimal::zero())
 /// ```
 ///
-#[derive(Builder, Debug, Serialize, Deserialize)]
+#[derive(Builder, Debug, Serialize, Deserialize, Clone)]
 #[builder(setter(into), pattern = "owned")]
 #[non_exhaustive]
 #[serde(rename_all = "camelCase")]
@@ -54,7 +54,7 @@ pub struct Status {
 }
 
 /// Static part of the contract information, unlike the status, has to be reported only once.
-#[derive(Builder, Debug, Serialize, Deserialize)]
+#[derive(Builder, Debug, Serialize, Deserialize, Clone)]
 #[builder(setter(into), pattern = "owned")]
 #[non_exhaustive]
 #[serde(rename_all = "camelCase")]
