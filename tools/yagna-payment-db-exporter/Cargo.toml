@@ -18,7 +18,7 @@ version = "0.5.11"
 features = ["runtime-actix-rustls", "sqlite", "chrono", "bigdecimal", "offline"]
 
 [dependencies.reputation-aggregator-model]
-version = "0.1"
+version = "0.2"
 features = ["client"]
 path = "../../crates/model"
 

@@ -1,9 +1,12 @@
-use reputation_aggregator_model::{NodeId, Status, StatusBuilder};
 use serde::{Deserialize, Serialize};
 use sqlx::migrate::Migrator;
 use sqlx::types::chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::types::BigDecimal;
 use sqlx::{PgPool, Pool, Postgres};
+
+use reputation_aggregator_model::{
+    AgreementInfo, AgreementInfoBuilder, NodeId, Status, StatusBuilder,
+};
 
 static MIGRATOR: Migrator = sqlx::migrate!();
 
@@ -33,15 +36,7 @@ impl StatusDao {
         Ok(StatusDao { pool })
     }
 
-    pub async fn list_providers(&self) -> sqlx::Result<Vec<String>> {
-        self.list("P").await
-    }
-
-    pub async fn list_requestors(&self) -> sqlx::Result<Vec<String>> {
-        self.list("R").await
-    }
-
-    async fn list(&self, role_id: &str) -> sqlx::Result<Vec<String>> {
+    pub async fn list(&self, role_id: &str) -> sqlx::Result<Vec<String>> {
         struct Node {
             node_id: String,
         }
@@ -54,6 +49,53 @@ impl StatusDao {
         .await?;
 
         Ok(nodes.into_iter().map(|node| node.node_id).collect())
+    }
+
+    pub async fn get_agreement_details(
+        &self,
+        role_id: &str,
+        node_id: &str,
+        agreement_id: &str,
+    ) -> sqlx::Result<Option<AgreementInfo>> {
+        struct DetailsRow {
+            peer_id: String,
+            created_ts: DateTime<Utc>,
+            valid_to: Option<DateTime<Utc>>,
+            runtime: Option<String>,
+            payment_platform: Option<String>,
+            payment_address: Option<String>,
+            subnet: Option<String>,
+            task_package: Option<String>,
+        }
+        let r: Option<DetailsRow> = sqlx::query_as!(
+            DetailsRow,
+            r#"
+        SELECT
+            peer_id, created_ts, valid_to, runtime,
+            payment_platform, payment_address, subnet, task_package
+        FROM agreement_details
+        WHERE ROLE_ID = $1 and NODE_ID=$2 and agreement_id = $3
+        "#,
+            role_id,
+            node_id,
+            agreement_id
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(r.and_then(|row| {
+            AgreementInfoBuilder::default()
+                .peer_id(row.peer_id.parse::<NodeId>().ok()?)
+                .created_ts(row.created_ts)
+                .valid_to(row.valid_to)
+                .runtime(row.runtime)
+                .payment_platform(row.payment_platform?)
+                .payment_address(row.payment_address?)
+                .subnet(row.subnet)
+                .task_package(row.task_package)
+                .build()
+                .ok()
+        }))
     }
 
     pub async fn list_agreements(
@@ -74,9 +116,17 @@ impl StatusDao {
         let agreement_rows = sqlx::query_as!(
             AgreementRow,
             r#"
-            SELECT agreement_id, peer_id, created_ts, updated_ts,
-                requested, accepted, confirmed
-             FROM AGREEMENT_STATUS where ROLE_ID = $1 and NODE_ID=$2"#,
+            SELECT
+                s.agreement_id as agreement_id,
+                d.peer_id as "peer_id?",
+                s.created_ts as created_ts,
+                s.updated_ts as updated_ts,
+                s.requested requested,
+                s.accepted accepted,
+                s.confirmed confirmed
+             FROM AGREEMENT_STATUS s left join AGREEMENT_DETAILS d
+               on (s.role_id = d.role_id and s.node_id = d.node_id and s.agreement_id = d.agreement_id)
+             where s.ROLE_ID = $1 and s.NODE_ID=$2"#,
             role_id,
             node_id
         )
@@ -102,19 +152,55 @@ impl StatusDao {
             .collect::<sqlx::Result<_>>()?)
     }
 
+    pub async fn insert_agreement(
+        &self,
+        role: &str,
+        node_id: NodeId,
+        agreement_id: &str,
+        agreement_info: AgreementInfo,
+    ) -> sqlx::Result<bool> {
+        let r = sqlx::query!(
+            r#"
+            INSERT INTO AGREEMENT_DETAILS(
+                role_id, node_id, agreement_id,
+                peer_id, created_ts, valid_to, runtime, payment_platform,
+                payment_address, subnet, task_package)
+                VALUES($1, $2, $3,
+                $4, $5, $6, $7, $8,
+                $9, $10, $11)
+        "#,
+            role,
+            node_id.to_string(),
+            agreement_id,
+            agreement_info.peer_id.to_string(),
+            agreement_info.created_ts,
+            agreement_info.valid_to,
+            agreement_info.runtime,
+            agreement_info.payment_platform,
+            agreement_info.payment_address,
+            agreement_info.subnet,
+            agreement_info.task_package
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(false)
+    }
+
     pub async fn insert_status(
         &self,
         role: &str,
         node_id: NodeId,
         agreement_id: &str,
-        peer_id: NodeId,
         status: &Status,
-    ) -> sqlx::Result<()> {
-        sqlx::query!(
+    ) -> sqlx::Result<bool> {
+        let mut connection = self.pool.acquire().await?;
+        let node_is_str = node_id.to_string();
+        let _query = sqlx::query!(
             r#"
             INSERT INTO AGREEMENT_STATUS(role_id, node_id, agreement_id, requested,
-            accepted, confirmed, peer_id, reported_ts)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+            accepted, confirmed, reported_ts)
+            VALUES($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT(role_id, node_id, agreement_id)
             DO
                 UPDATE SET
@@ -122,20 +208,37 @@ impl StatusDao {
                     accepted = $5,
                     confirmed = $6,
                     updated_ts = CURRENT_TIMESTAMP,
-                    reported_ts = $8
+                    reported_ts = $7
         "#,
             role,
-            node_id.to_string(),
+            &node_is_str,
             agreement_id,
             status.requested,
             status.accepted,
             status.confirmed,
-            peer_id.to_string(),
             status.ts
         )
-        .execute(&self.pool)
+        .execute(&mut connection)
         .await?;
-        Ok(())
+
+        let have_details: bool = sqlx::query_scalar!(
+            r#"
+            SELECT EXISTS(
+                SELECT *
+                FROM AGREEMENT_DETAILS
+                WHERE ROLE_ID = $1
+                  AND NODE_ID = $2
+                  AND AGREEMENT_ID = $3)
+         "#,
+            role,
+            &node_is_str,
+            agreement_id
+        )
+        .fetch_one(&mut connection)
+        .await?
+        .unwrap_or_default();
+
+        Ok(have_details)
     }
 
     pub async fn standard_score(

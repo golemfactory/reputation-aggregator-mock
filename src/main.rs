@@ -6,7 +6,6 @@ use actix_web::{App, HttpServer};
 use actix_web_static_files::ResourceFiles;
 use tracing::Level;
 use tracing_actix_web::TracingLogger;
-use tracing_subscriber::prelude::*;
 use tracing_subscriber::FmtSubscriber;
 
 mod config;

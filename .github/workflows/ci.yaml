@@ -29,6 +29,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 12.18.4
+      - uses: Swatinem/rust-cache@v1
       - uses: actions-rs/cargo@v1
         env:
           SQLX_OFFLINE: true

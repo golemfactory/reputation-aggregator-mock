@@ -1,26 +1,6 @@
 {
   "db": "PostgreSQL",
-  "6140c0e601e250aa2705a691134551918a52d34a48ca074f055c911bfd732fe6": {
-    "describe": {
-      "columns": [
-        {
-          "name": "node_id",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Bpchar"
-        ]
-      }
-    },
-    "query": "SELECT distinct node_id FROM AGREEMENT_STATUS where ROLE_ID = $1"
-  },
-  "66de96d330b58d5fd201559180a5abc92450809c27939e58539edb028bd16ea1": {
+  "142e31bf73afe7b2a963e337fdfee6a1926706bdd3ee8e7882e665e700fdacae": {
     "describe": {
       "columns": [
         {
@@ -29,7 +9,7 @@
           "type_info": "Varchar"
         },
         {
-          "name": "peer_id",
+          "name": "peer_id?",
           "ordinal": 1,
           "type_info": "Varchar"
         },
@@ -61,7 +41,7 @@
       ],
       "nullable": [
         false,
-        true,
+        false,
         false,
         false,
         false,
@@ -75,9 +55,31 @@
         ]
       }
     },
-    "query": "\n            SELECT agreement_id, peer_id, created_ts, updated_ts,\n                requested, accepted, confirmed\n             FROM AGREEMENT_STATUS where ROLE_ID = $1 and NODE_ID=$2"
+    "query": "\n            SELECT\n                s.agreement_id as agreement_id,\n                d.peer_id as \"peer_id?\",\n                s.created_ts as created_ts,\n                s.updated_ts as updated_ts,\n                s.requested requested,\n                s.accepted accepted,\n                s.confirmed confirmed\n             FROM AGREEMENT_STATUS s left join AGREEMENT_DETAILS d\n               on (s.role_id = d.role_id and s.node_id = d.node_id and s.agreement_id = d.agreement_id)\n             where s.ROLE_ID = $1 and s.NODE_ID=$2"
   },
-  "a4eb7b08e65eebe2d2d69d8bb8ef1fe2404822a978ad04115df64e6af9c3c001": {
+  "2af64522696cf3cc749e8155fed31f1937f8a68b36072c67c8d0970ee3743b29": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          "Timestamptz",
+          "Timestamptz",
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO AGREEMENT_DETAILS(\n                role_id, node_id, agreement_id,\n                peer_id, created_ts, valid_to, runtime, payment_platform,\n                payment_address, subnet, task_package)\n                VALUES($1, $2, $3,\n                $4, $5, $6, $7, $8,\n                $9, $10, $11)\n        "
+  },
+  "3fefd68609e47ae0e43beca05edb418f802e5cadd36cfa2c50013f8ecc1f5aac": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -89,12 +91,95 @@
           "Numeric",
           "Numeric",
           "Numeric",
-          "Varchar",
           "Timestamptz"
         ]
       }
     },
-    "query": "\n            INSERT INTO AGREEMENT_STATUS(role_id, node_id, agreement_id, requested,\n            accepted, confirmed, peer_id, reported_ts)\n            VALUES($1, $2, $3, $4, $5, $6, $7, $8)\n            ON CONFLICT(role_id, node_id, agreement_id)\n            DO\n                UPDATE SET\n                    requested = $4,\n                    accepted = $5,\n                    confirmed = $6,\n                    updated_ts = CURRENT_TIMESTAMP,\n                    reported_ts = $8\n        "
+    "query": "\n            INSERT INTO AGREEMENT_STATUS(role_id, node_id, agreement_id, requested,\n            accepted, confirmed, reported_ts)\n            VALUES($1, $2, $3, $4, $5, $6, $7)\n            ON CONFLICT(role_id, node_id, agreement_id)\n            DO\n                UPDATE SET\n                    requested = $4,\n                    accepted = $5,\n                    confirmed = $6,\n                    updated_ts = CURRENT_TIMESTAMP,\n                    reported_ts = $7\n        "
+  },
+  "43526ca61628d06dc7c0e9f9d35041e74431edbefa43999617bd7b3ce58f8166": {
+    "describe": {
+      "columns": [
+        {
+          "name": "peer_id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "created_ts",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "valid_to",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "runtime",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "payment_platform",
+          "ordinal": 4,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "payment_address",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "subnet",
+          "ordinal": 6,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "task_package",
+          "ordinal": 7,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        SELECT\n            peer_id, created_ts, valid_to, runtime,\n            payment_platform, payment_address, subnet, task_package\n        FROM agreement_details\n        WHERE ROLE_ID = $1 and NODE_ID=$2 and agreement_id = $3\n        "
+  },
+  "6140c0e601e250aa2705a691134551918a52d34a48ca074f055c911bfd732fe6": {
+    "describe": {
+      "columns": [
+        {
+          "name": "node_id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar"
+        ]
+      }
+    },
+    "query": "SELECT distinct node_id FROM AGREEMENT_STATUS where ROLE_ID = $1"
   },
   "c83e4f89ddfef3f0808fa420eb4a134b49962a0732781ddb36a1e1c58919f329": {
     "describe": {
@@ -116,5 +201,27 @@
       }
     },
     "query": "SELECT CALC.STANDARD_SCORE($1, $2) as score"
+  },
+  "d522adc33159d29d8a029594b52feff0e5b31202c382d600f29e0b07c775f28e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "exists",
+          "ordinal": 0,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Bpchar",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            SELECT EXISTS(\n                SELECT *\n                FROM AGREEMENT_DETAILS\n                WHERE ROLE_ID = $1\n                  AND NODE_ID = $2\n                  AND AGREEMENT_ID = $3)\n         "
   }
 }
