@@ -1,6 +1,11 @@
+from datetime import timedelta
+import math
+from random import randint
+
+from primefac import isprime
+
 from yapapi import WorkContext
 from yapapi.rest.activity import BatchTimeoutError
-from datetime import timedelta
 
 
 IMAGE_DOWNLOAD_TIMEOUT = timedelta(minutes=3)
@@ -9,11 +14,37 @@ IMAGE_DOWNLOAD_TIMEOUT = timedelta(minutes=3)
 IMAGE_HASH = "9a3b5d67b0b27746283cb5f287c13eab1beaa12d92a9f536b747c7ae"
 
 
+def get_random_primes(cnt, max_size):
+    result = []
+    while len(result) < cnt:
+        x = randint(2, max_size)
+        if isprime(x):
+            result.append(x)
+    return result
+
+
 def prepare_task_data(task_size: int):
-    numbers = " ".join([str(x) for x in range(task_size)])
-    command = ["/bin/bash", "-c", f"echo -n {numbers}"]
-    expected_output = numbers
-    timeout = timedelta(minutes=1)
+    #   Create (int, prime_factors) map
+    raw_data = {}
+    for i in range(task_size):
+        primes = get_random_primes(3, 10**6)
+        num = math.prod(primes)
+        if num not in raw_data:
+            raw_data[num] = primes
+
+    #   Convert the map to a command and expected output
+    command_args = []
+    output_lines = []
+    for num in sorted(raw_data):
+        primes_str = " ".join(str(p) for p in sorted(raw_data[num]))
+        command_args.append(num)
+        output_lines.append(f"{num}: {primes_str}")
+
+    command_args_str = " ".join(str(x) for x in command_args)
+    command = ["/bin/bash", "-c", f"factor {command_args_str}"]
+
+    expected_output = "\n".join(output_lines) + "\n"
+    timeout = timedelta(seconds=10 + task_size)
 
     return (command, expected_output, timeout)
 
@@ -38,7 +69,6 @@ async def worker(ctx: WorkContext, tasks):
     script = ctx.new_script(timeout=timeout)
     result = script.run(*command)
 
-    print("RUNNIG A TASK")
     yield script
 
     received_output = (await result).stdout
