@@ -42,13 +42,15 @@ if __name__ == "__main__":
     parser.set_defaults(log_file=f"a1_requestor-{now}.log")
     args = parser.parse_args()
 
+    strategy = AlphaRequestorStrategy(min_offers=6, repu_factor=0)
     golem = Golem(
         budget=10,  # TODO: do we need to parametrize this?
-        strategy=AlphaRequestorStrategy(0, 0),
+        strategy=strategy,
         subnet_tag=args.subnet_tag,
         payment_driver=args.payment_driver,
         payment_network=args.payment_network,
     )
+    golem.add_event_consumer(strategy.event_consumer, ["ProposalReceived"])
 
     run_golem_example(
         main(golem, num_providers=3, task_size=7),
