@@ -18,17 +18,11 @@ from a1_requestor.yapapi_example_utils import (
     print_env_info,
 )
 from a1_requestor.worker import worker, IMAGE_HASH, prepare_task_data
+from a1_requestor.strategy import AlphaRequestorStrategy
 
 
-async def main(*, budget, subnet_tag, payment_driver, payment_network, num_providers, task_size):
+async def main(golem, *, num_providers, task_size):
     payload = await vm.repo(image_hash=IMAGE_HASH)
-
-    golem = Golem(
-        budget=budget,
-        subnet_tag=subnet_tag,
-        payment_driver=payment_driver,
-        payment_network=payment_network,
-    )
 
     async with golem:
         print_env_info(golem)
@@ -39,7 +33,7 @@ async def main(*, budget, subnet_tag, payment_driver, payment_network, num_provi
         num_tasks = 0
         async for _ in golem.execute_tasks(worker, tasks, payload, max_workers=num_providers):
             num_tasks += 1
-            print(f"{num_tasks} out of {num_providers} providers tested")
+            print(f"{num_tasks} out of {num_providers} planned providers tested")
 
 
 if __name__ == "__main__":
@@ -48,14 +42,15 @@ if __name__ == "__main__":
     parser.set_defaults(log_file=f"a1_requestor-{now}.log")
     args = parser.parse_args()
 
+    golem = Golem(
+        budget=10,  # TODO: do we need to parametrize this?
+        strategy=AlphaRequestorStrategy(0, 0),
+        subnet_tag=args.subnet_tag,
+        payment_driver=args.payment_driver,
+        payment_network=args.payment_network,
+    )
+
     run_golem_example(
-        main(
-            budget=10,  # TODO: do we need to parametrize this?
-            subnet_tag=args.subnet_tag,
-            payment_driver=args.payment_driver,
-            payment_network=args.payment_network,
-            num_providers=3,
-            task_size=7,
-        ),
+        main(golem, num_providers=3, task_size=7),
         log_file=args.log_file,
     )
