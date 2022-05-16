@@ -25,6 +25,8 @@ python3 requestor.py
                          # NOTE: This also influences the task timeout. Timeout is set to more-or-less
                          #       "twice the slowest we encoutered during the development", 
                          #       excluding the image download that has a constant timeout.
+    --num-providers INT  # How many different providers will be tested.
+                         # We'll always run only a single task per provider.
 
 
     #   Common yapapi args that have defaults & work just as in any yapapi example
