@@ -21,10 +21,12 @@ python3 requestor.py
                          #   100  -> we accept offers only from the single best provider (among current offers)
                          # NOTE: we'll always accept offers from providers without known reputation
     --min-offers    INT  # How many offers we should gather before we start selecting providers
-    --task-size     INT  # Higher number = longer task. 
-                         # NOTE: This also influences the task timeout. Timeout is set to more-or-less
-                         #       "twice the slowest we encoutered during the development", 
-                         #       excluding the image download that has a constant timeout.
+    --task-size     INT  # Higher number = longer task. On the devnet-beta this is more-or-less
+                         # the number of seconds required to perform the computations.
+                         # NOTE:  This also influences the task timeout. Timeout is set to 5 * task_size.
+                         #        (this doesn't cover the time required to download the image)
+                         # NOTE2: Currently there is some limit on the task-size because task data is sent in
+                         #        a command, not a file. This can be easily fixed.
     --num-providers INT  # How many different providers will be tested.
                          # We'll always run only a single task per provider.
 
@@ -41,7 +43,8 @@ python3 requestor.py
 `yapapi` - latest `master` should be fine, developed & tested with `53247a6` (10.05.2022).
 
 ```
-pip3 install git+https://github.com/golemfactory/yapapi.git@53247a6   
+pip3 install git+https://github.com/golemfactory/yapapi.git@jb/proposal-received-scored-split
+pip3 install primefac==2.0.12
 ```
 
 (Note: `yapapi==0.9.*` is **not** enough).
