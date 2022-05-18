@@ -60,4 +60,5 @@ if __name__ == "__main__":
         log_file=args.log_file,
     )
 
-    print(f"PAYABLE: {len(strategy._payable_activities)}, FAILED: {len(strategy._failed_activities)}")
+    print(f"PAYABLE AGREEMENTS: {len(strategy._payable_agreements)}")
+    print(f"FAILED ACTIVITIES: {len(strategy._failed_activities)}")

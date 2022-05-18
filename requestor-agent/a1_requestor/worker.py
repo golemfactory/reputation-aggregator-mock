@@ -75,7 +75,7 @@ async def worker(ctx: WorkContext, tasks):
         return
 
     command, expected_data = task.data
-    timeout = timedelta(len(expected_data) * 5)
+    timeout = timedelta(seconds=len(expected_data) * 5)
 
     script = ctx.new_script(timeout=timeout)
     result = script.run(*command)
