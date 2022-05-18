@@ -32,7 +32,9 @@ class AlphaRequestorStrategy(MarketStrategy):
             print(f"Waiting for {self.min_offers} offers, current count: {len(self._offers)})")
             await asyncio.sleep(1)
 
-        return 7
+        if self._price_too_high(offer):
+            return -1
+        return await self._reputation_score(offer.issuer)
 
     def event_consumer(self, event: Union[ProposalReceived, TaskTimeout, IncorrectResult, TaskAccepted]) -> None:
         if isinstance(event, ProposalReceived):
@@ -43,3 +45,15 @@ class AlphaRequestorStrategy(MarketStrategy):
         else:
             activity_id = event.activity.id
             self._failed_activities.add(activity_id)
+
+    def _price_too_high(self, offer) -> bool:
+        #   TODO: set a limit here, we don't want to pay too much
+        return False
+
+    async def _reputation_score(self, provider_id) -> float:
+        #   TODO:
+        #   1.  Get the reputation for the provider
+        #   2.  If it is empty, return 1
+        #   3.  If not, sometimes return -1 (the more often the higher is self.repu_factor
+        #       and the lower is reputation), otherwise 1.
+        return 1
