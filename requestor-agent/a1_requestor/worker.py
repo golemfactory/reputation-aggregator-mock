@@ -1,7 +1,7 @@
 from datetime import timedelta
 import math
 from random import randint
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from primefac import isprime
 
@@ -24,6 +24,7 @@ class IncorrectResult(ActivityEvent):
 
 
 def get_random_primes(cnt, max_size):
+    """Return CNT prime numbers in range (2, MAX_SIZE)"""
     result = []
     while len(result) < cnt:
         x = randint(2, max_size)
@@ -32,7 +33,8 @@ def get_random_primes(cnt, max_size):
     return result
 
 
-def prepare_task_data(task_size: int) -> Tuple[List[str], Dict[int, List[int]]]:
+def prepare_task_data(task_size: int) -> Dict[int, List[int]]:
+    """Create a random map {integer -> list_of_prime_factors} with TASK_SIZE elements"""
     src_data = {}
     for i in range(task_size):
         #   With this params it takes ~~ 1s to factorize a single number on the devnet-beta,
@@ -42,13 +44,11 @@ def prepare_task_data(task_size: int) -> Tuple[List[str], Dict[int, List[int]]]:
         if num not in src_data:
             src_data[num] = sorted(primes)
 
-    command_args_str = " ".join(str(x) for x in sorted(src_data))
-    command = ["/bin/sh", "-c", f"python3 -m primefac {command_args_str}"]
-
-    return (command, src_data)
+    return src_data
 
 
 def parse_stdout(provider_stdout: str) -> Dict[int, List[int]]:
+    """Create a map {integer -> list_of_prime_factors} based on the PROVIDER_STDOUT"""
     data = {}
     for line in provider_stdout.splitlines():
         number_str, primes_str = line.split(':')
@@ -74,8 +74,10 @@ async def worker(ctx: WorkContext, tasks):
         #   I'm not sure if this is possible?
         return
 
-    command, expected_data = task.data
-    timeout = timedelta(seconds=len(expected_data) * 5)
+    src_data = task.data
+    command_args_str = " ".join(str(x) for x in sorted(src_data))
+    command = ["/bin/sh", "-c", f"python3 -m primefac {command_args_str}"]
+    timeout = timedelta(seconds=len(src_data) * 5)
 
     script = ctx.new_script(timeout=timeout)
     result = script.run(*command)
@@ -88,7 +90,7 @@ async def worker(ctx: WorkContext, tasks):
 
     try:
         received_data = parse_stdout((await result).stdout)
-        assert received_data == expected_data
+        assert received_data == src_data
     except Exception:
         ctx.emit(IncorrectResult)
         raise
