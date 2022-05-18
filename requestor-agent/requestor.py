@@ -17,7 +17,7 @@ from a1_requestor.yapapi_example_utils import (
     run_golem_example,
     print_env_info,
 )
-from a1_requestor.worker import worker, IMAGE_HASH, prepare_task_data
+from a1_requestor.worker import worker, IMAGE_HASH, prepare_task_data, TaskTimeout, IncorrectResult
 from a1_requestor.strategy import AlphaRequestorStrategy
 
 
@@ -50,9 +50,14 @@ if __name__ == "__main__":
         payment_driver=args.payment_driver,
         payment_network=args.payment_network,
     )
-    golem.add_event_consumer(strategy.event_consumer, ["ProposalReceived"])
+    golem.add_event_consumer(
+        strategy.event_consumer,
+        ["ProposalReceived", TaskTimeout, IncorrectResult, "TaskAccepted"]
+    )
 
     run_golem_example(
         main(golem, num_providers=3, task_size=7),
         log_file=args.log_file,
     )
+
+    print(f"PAYABLE: {len(strategy._payable_activities)}, FAILED: {len(strategy._failed_activities)}")

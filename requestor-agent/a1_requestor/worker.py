@@ -7,12 +7,20 @@ from primefac import isprime
 
 from yapapi import WorkContext
 from yapapi.rest.activity import BatchTimeoutError
-
+from yapapi.events import ActivityEvent
 
 IMAGE_DOWNLOAD_TIMEOUT = timedelta(minutes=3)
 
 #   Python 3.8-alpine + primefac
 IMAGE_HASH = "1ff5f0fe16b6a1f3fc7a01eba370d10845b21f3745e25eeba6dc5340"
+
+
+class TaskTimeout(ActivityEvent):
+    pass
+
+
+class IncorrectResult(ActivityEvent):
+    pass
 
 
 def get_random_primes(cnt, max_size):
@@ -24,11 +32,10 @@ def get_random_primes(cnt, max_size):
     return result
 
 
-def prepare_task_data(task_size: int) -> Tuple[List[str], Dict[int, List[int]], timedelta]:
-    #   Create (int, prime_factors) map
+def prepare_task_data(task_size: int) -> Tuple[List[str], Dict[int, List[int]]]:
     src_data = {}
     for i in range(task_size):
-        #   With this params it takes ~~ 1s to factorize the number on the devnet-beta,
+        #   With this params it takes ~~ 1s to factorize a single number on the devnet-beta,
         #   so task_size ~~ time_in_seconds.
         primes = get_random_primes(8, 10**10)
         num = math.prod(primes)
@@ -38,9 +45,7 @@ def prepare_task_data(task_size: int) -> Tuple[List[str], Dict[int, List[int]], 
     command_args_str = " ".join(str(x) for x in sorted(src_data))
     command = ["/bin/sh", "-c", f"python3 -m primefac {command_args_str}"]
 
-    timeout = timedelta(task_size * 5)
-
-    return (command, src_data, timeout)
+    return (command, src_data)
 
 
 def parse_stdout(provider_stdout: str) -> Dict[int, List[int]]:
@@ -54,12 +59,13 @@ def parse_stdout(provider_stdout: str) -> Dict[int, List[int]]:
 
 
 async def worker(ctx: WorkContext, tasks):
+    #   Separate pre-task so we have a seprate timeout for download
     script = ctx.new_script(timeout=IMAGE_DOWNLOAD_TIMEOUT)
     script.run("/bin/sh", "-c", "echo foo")
     try:
         yield script
     except BatchTimeoutError:
-        #   TODO: save the information that provider failed
+        ctx.emit(TaskTimeout)
         raise
 
     try:
@@ -68,16 +74,24 @@ async def worker(ctx: WorkContext, tasks):
         #   I'm not sure if this is possible?
         return
 
-    command, src_data, timeout = task.data
+    command, expected_data = task.data
+    timeout = timedelta(len(expected_data) * 5)
 
     script = ctx.new_script(timeout=timeout)
     result = script.run(*command)
 
-    yield script
+    try:
+        yield script
+    except BatchTimeoutError:
+        ctx.emit(TaskTimeout)
+        raise
 
-    received_data = parse_stdout((await result).stdout)
-    if received_data != src_data:
-        raise Exception("BAD PROVIDER RETURNED A BAD RESULT!")
+    try:
+        received_data = parse_stdout((await result).stdout)
+        assert received_data == expected_data
+    except Exception:
+        ctx.emit(IncorrectResult)
+        raise
 
     task.accept_result()
 
