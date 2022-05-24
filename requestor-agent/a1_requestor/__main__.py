@@ -40,9 +40,15 @@ if __name__ == "__main__":
     parser = build_parser("Run an alpha1 requestor")
     now = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
     parser.set_defaults(log_file=f"a1_requestor-{now}.log")
+
+    parser.add_argument("--repu-factor", type=int, required=True)
+    parser.add_argument("--min-offers", type=int, required=True)
+    parser.add_argument("--task-size", type=int, required=True)
+    parser.add_argument("--num-providers", type=int, required=True)
+
     args = parser.parse_args()
 
-    strategy = AlphaRequestorStrategy(min_offers=6, repu_factor=0)
+    strategy = AlphaRequestorStrategy(min_offers=args.min_offers, repu_factor=args.repu_factor)
     golem = Golem(
         budget=10,  # TODO: do we need to parametrize this?
         strategy=strategy,
@@ -56,7 +62,7 @@ if __name__ == "__main__":
     )
 
     run_golem_example(
-        main(golem, num_providers=3, task_size=7),
+        main(golem, num_providers=args.num_providers, task_size=args.task_size),
         log_file=args.log_file,
     )
 
