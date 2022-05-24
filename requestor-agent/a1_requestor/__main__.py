@@ -45,10 +45,15 @@ if __name__ == "__main__":
     parser.add_argument("--min-offers", type=int, required=True)
     parser.add_argument("--task-size", type=int, required=True)
     parser.add_argument("--num-providers", type=int, required=True)
+    parser.add_argument("--offers-wait-timeout", type=int, default=60)
 
     args = parser.parse_args()
 
-    strategy = AlphaRequestorStrategy(min_offers=args.min_offers, repu_factor=args.repu_factor)
+    strategy = AlphaRequestorStrategy(
+        min_offers=args.min_offers,
+        repu_factor=args.repu_factor,
+        wait_for_offers_timeout_seconds=args.offers_wait_timeout,
+    )
     golem = Golem(
         budget=10,  # TODO: do we need to parametrize this?
         strategy=strategy,

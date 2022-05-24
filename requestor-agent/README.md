@@ -26,7 +26,8 @@ python3 -m a1_requestor
                          #   0    -> we don't care about the reputation
                          #   100  -> we accept offers only from the single best provider (among current offers)
                          # NOTE: we'll always accept offers from providers without known reputation
-    --min-offers    INT  # How many offers we should gather before we start selecting providers
+    --min-offers    INT  # How many offers we should gather before we start selecting providers 
+                         # (check also offers_wait_timeout argument)
     --task-size     INT  # Higher number = longer task. On the devnet-beta this is more-or-less
                          # the number of seconds required to perform the computations.
                          # NOTE:  This also influences the task timeout. Timeout is set to 5 * task_size.
@@ -36,6 +37,9 @@ python3 -m a1_requestor
     --num-providers INT  # How many different providers will be tested.
                          # We'll always run only a single task per provider.
 
+    #   Optional 
+    --offers-wait-timeout INT  # After this time (seconds) stop waiting for min-offers even if we didn't reach the treshold
+                               # Defaults to 60.
 
     #   Common yapapi args that have defaults & work just as in any yapapi example
     --subnet-tag
