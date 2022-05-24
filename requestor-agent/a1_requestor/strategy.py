@@ -18,6 +18,7 @@ class AlphaRequestorStrategy(MarketStrategy):
         self._offers = set()
         self._failed_activities = set()
         self._payable_agreements = set()
+        self._scored_providers = set()
 
         self._wait_for_offers_task: Optional[asyncio.Task] = None
 
@@ -36,8 +37,19 @@ class AlphaRequestorStrategy(MarketStrategy):
             self._wait_for_offers_task = asyncio.create_task(self._wait_for_offers())
         await asyncio.wait_for(self._wait_for_offers_task, None)
 
+        #   Ensure we have no more than a single agreement with the same provider
+        #   NOTE: This also prevents us from creating multiple agreements from the same offer
+        #         because offer is rescored after agreement ended.
+        #         (I tried to find this logic in yapapi and failed, but seems to work).
+        #   Also: offer.is_draft is necessary because there is a non-draft and later draft offer
+        #         before the agreement is signed, and we don't want to reject the latter.
+        if not offer.is_draft and offer.issuer in self._scored_providers:
+            return -1
+        self._scored_providers.add(offer.issuer)
+
         if self._price_too_high(offer):
             return -1
+
         return await self._reputation_score(offer.issuer)
 
     def event_consumer(self, event: Union[ProposalReceived, TaskTimeout, IncorrectResult, TaskAccepted]) -> None:
