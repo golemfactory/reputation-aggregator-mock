@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "a1-requestor"
+version = "0.0.1"
+description = "Requestor agent compatible with the a1 reputation prototype"
+authors = ["Golem Factory <contact@golem.network>"]
+license = "LGPL-3.0"
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.8",
+  "Topic :: Software Development",
+  "Topic :: System :: Distributed Computing",
+]
+repository = "https://github.com/golemfactory/reputation-aggregator-mock"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+primefac = "^2.0"
+yapapi = { git = "https://github.com/golemfactory/yapapi.git" }
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -10,10 +10,16 @@ Key elements:
 *   We use the global A1 reputation to filter out the low-performing providers
 *   Task weight varies between runs
 
+##  Installation
+
+```
+pip3 install git+https://github.com/golemfactory/reputation-aggregator-mock.git@jb/a1-requestor-agent#subdirectory=requestor-agent
+```
+
 ##  Usage
 
 ```
-python3 requestor.py 
+python3 -m a1_requestor
     #   Important required args
     --repu-factor   INT  # 0-100 the higher the factor the higher is the chance we'll refuse the offer
                          # because of the reputation.
@@ -37,16 +43,3 @@ python3 requestor.py
     --payment-driver
     --log-file
 ```
-
-##  Requirements
-
-`yapapi` - latest `master` should be fine, developed & tested with `53247a6` (10.05.2022).
-
-```
-pip3 install git+https://github.com/golemfactory/yapapi.git@jb/proposal-received-scored-split
-pip3 install primefac==2.0.12
-```
-
-(Note: `yapapi==0.9.*` is **not** enough).
-
-
