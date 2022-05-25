@@ -21,10 +21,11 @@ pip3 install git+https://github.com/golemfactory/reputation-aggregator-mock.git@
 ```
 python3 -m a1_requestor
     #   Important required args
-    --repu-factor   INT  # 0-100 the higher the factor the higher is the chance we'll refuse the offer
-                         # because of the reputation.
+    --repu-factor   INT  # Positive int, the higher the factor the higher is the chance we'll refuse the offer
+                         # because of the reputation. Sample values:
                          #   0    -> we don't care about the reputation
-                         #   100  -> we accept offers only from the single best provider (among current offers)
+                         #   100  -> worst provider has micro-chance, median 0.25, best 1
+                         #   1000000 -> best provider still 1, but others have a reaaaaly low chance (although not 0)
                          # NOTE: we'll always accept offers from providers without known reputation
     --min-offers    INT  # How many offers we should gather before we start selecting providers 
                          # (check also offers_wait_timeout argument)

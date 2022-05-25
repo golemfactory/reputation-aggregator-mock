@@ -1,13 +1,33 @@
+import aiohttp
 import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, Union
 from decimal import Decimal
+from random import random
 
 from yapapi.strategy import MarketStrategy, LeastExpensiveLinearPayuMS
 from yapapi.events import ProposalReceived, TaskAccepted
 from yapapi.props import com
 
 from .worker import TaskTimeout, IncorrectResult
+
+PROVIDER_STANDARD_SCORE_URL = "http://reputation.dev.golem.network/standard_score/provider/{}"
+
+
+async def get_provider_standard_score(provider_id: str) -> Optional[float]:
+    url = PROVIDER_STANDARD_SCORE_URL.format(provider_id)
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status != 200:
+                    return None
+                score_str = (await response.json())['score']
+                score = float(score_str) if score_str is not None else None
+                return score
+    except aiohttp.client_exceptions.ClientError:
+        print("Reputation service is down")
+        return None
 
 
 class AlphaRequestorStrategy(MarketStrategy):
@@ -22,6 +42,8 @@ class AlphaRequestorStrategy(MarketStrategy):
         self._scored_providers = set()
 
         self._wait_for_offers_task: Optional[asyncio.Task] = None
+
+        self._provider_scores = {}
 
     async def debit_note_accepted_amount(self, debit_note):
         if debit_note.activity_id in self._failed_activities:
@@ -58,6 +80,10 @@ class AlphaRequestorStrategy(MarketStrategy):
     def event_consumer(self, event: Union[ProposalReceived, TaskTimeout, IncorrectResult, TaskAccepted]) -> None:
         if isinstance(event, ProposalReceived):
             self._offers.add(event.proposal)
+            if event.proposal.issuer not in self._provider_scores:
+                provider_name = event.proposal._proposal.proposal.properties['golem.node.id.name']
+                asyncio.create_task(self._load_score(event.proposal.issuer, provider_name))
+
         elif isinstance(event, TaskAccepted):
             agreement_id = event.agreement.id
             self._payable_agreements.add(agreement_id)
@@ -79,12 +105,33 @@ class AlphaRequestorStrategy(MarketStrategy):
         return lelp_score < 0
 
     async def _reputation_score(self, provider_id) -> float:
-        #   TODO:
-        #   1.  Get the reputation for the provider
-        #   2.  If it is empty, return 1
-        #   3.  If not, sometimes return -1 (the more often the higher is self.repu_factor
-        #       and the lower is reputation), otherwise 1.
-        return 1
+        while provider_id not in self._provider_scores:
+            #   There is a separate task that is getting the score now
+            await asyncio.sleep(1)
+
+        score = self._provider_scores[provider_id]
+        if score is None:
+            #   New provider, we want to try them
+            return 1
+
+        better_cnt = sum(1 for _, other_score in self._provider_scores.items() if other_score > score)
+
+        #   Compute the probability that offer will be accepted. This is e.g.:
+        #       1 if self._repu_factor is 0
+        #       1 if this is the best provider
+        #       Almost 0 if self._repu_factor is 100 and this is the worst provider
+        #       Around 0.25 if self._repu_factor is 100 and this is the median provider
+        accepted_prob = 1 - (self.repu_factor / 100) * ((better_cnt / len(self._provider_scores))**2)
+
+        if random() < accepted_prob:
+            #   This offer is accepted and we no longer care about reputation,
+            #   but we want the (accepted) score to be randomized because this way
+            #   we don't care (or maybe care less) about the incoming offers order
+            print(f"Accepted offer with score {score}")
+            return 1 - random()
+        else:
+            print(f"Refused offer with score {score} because there are {better_cnt} better providers")
+            return -1
 
     async def _wait_for_offers(self) -> None:
         deadline = datetime.now() + self.wait_for_offers_timeout
@@ -94,3 +141,8 @@ class AlphaRequestorStrategy(MarketStrategy):
                 f"seconds more, current offers count: {len(self._offers)}"
             )
             await asyncio.sleep(1)
+
+    async def _load_score(self, provider_id, provider_name):
+        score = await get_provider_standard_score(provider_id)
+        print(f"Score for provider {provider_name} ({provider_id}) is {score}")
+        self._provider_scores[provider_id] = score
