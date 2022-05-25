@@ -114,7 +114,7 @@ class AlphaRequestorStrategy(MarketStrategy):
             #   New provider, we want to try them
             return 1
 
-        better_cnt = sum(1 for _, other_score in self._provider_scores.items() if other_score > score)
+        better_cnt = sum(1 for _, other_score in self._provider_scores.items() if other_score is None or other_score > score)
 
         #   Compute the probability that offer will be accepted. This is e.g.:
         #       1 if self._repu_factor is 0
