@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 from typing import Optional, Union
 from decimal import Decimal
 
-from yapapi.strategy import MarketStrategy
+from yapapi.strategy import MarketStrategy, LeastExpensiveLinearPayuMS
 from yapapi.events import ProposalReceived, TaskAccepted
+from yapapi.props import com
 
 from .worker import TaskTimeout, IncorrectResult
 
@@ -47,7 +48,9 @@ class AlphaRequestorStrategy(MarketStrategy):
             return -1
         self._scored_providers.add(offer.issuer)
 
-        if self._price_too_high(offer):
+        if await self._price_too_high(offer):
+            provider_name = offer._proposal.proposal.properties['golem.node.id.name']
+            print(f"Rejected offer from {provider_name} ({offer.issuer}) because of the price")
             return -1
 
         return await self._reputation_score(offer.issuer)
@@ -62,9 +65,18 @@ class AlphaRequestorStrategy(MarketStrategy):
             activity_id = event.activity.id
             self._failed_activities.add(activity_id)
 
-    def _price_too_high(self, offer) -> bool:
-        #   TODO: set a limit here, we don't want to pay too much
-        return False
+    async def _price_too_high(self, offer) -> bool:
+        #   NOTE: we use this strategy because it's easier than extracting important
+        #         logic from it and writing the logic directly.
+        lelp = LeastExpensiveLinearPayuMS(
+            max_fixed_price=Decimal(0.1),
+            max_price_for={
+                com.Counter.CPU: Decimal(0.1),
+                com.Counter.TIME: Decimal(0.1),
+            },
+        )
+        lelp_score = await lelp.score_offer(offer)
+        return lelp_score < 0
 
     async def _reputation_score(self, provider_id) -> float:
         #   TODO:
