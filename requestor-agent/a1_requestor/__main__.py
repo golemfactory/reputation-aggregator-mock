@@ -21,14 +21,14 @@ from a1_requestor.worker import worker, IMAGE_HASH, prepare_task_data, TaskTimeo
 from a1_requestor.strategy import AlphaRequestorStrategy
 
 
-async def main(golem, *, num_providers, task_size):
+async def main(golem, *, num_providers, task_size, random_fail_factor):
     payload = await vm.repo(image_hash=IMAGE_HASH)
 
     async with golem:
         print_env_info(golem)
 
         task_data = prepare_task_data(task_size)
-        tasks = [Task(data=task_data) for _ in range(num_providers)]
+        tasks = [Task(data=(task_data, random_fail_factor)) for _ in range(num_providers)]
 
         num_tasks = 0
         async for _ in golem.execute_tasks(worker, tasks, payload, max_workers=num_providers):
@@ -46,6 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--task-size", type=int, required=True)
     parser.add_argument("--num-providers", type=int, required=True)
     parser.add_argument("--offers-wait-timeout", type=int, default=60)
+    parser.add_argument("--random-fail-factor", type=int, default=0)
 
     args = parser.parse_args()
 
@@ -67,7 +68,12 @@ if __name__ == "__main__":
     )
 
     run_golem_example(
-        main(golem, num_providers=args.num_providers, task_size=args.task_size),
+        main(
+            golem,
+            num_providers=args.num_providers,
+            task_size=args.task_size,
+            random_fail_factor=args.random_fail_factor,
+        ),
         log_file=args.log_file,
     )
 

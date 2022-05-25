@@ -34,7 +34,7 @@ python3 -m a1_requestor
                          #        (this doesn't cover the time required to download the image)
                          # NOTE2: Currently there is some limit on the task-size (~400, exact number may vary between runs)
                          #        because task data is sent in a command, not a file. This can be easily fixed.
-    --num-providers INT  # How many different providers will be tested.
+    --num-providers INT  # End execution after this number of **successful** task runs.
                          # We'll always run only a single task per provider.
 
     #   Optional 

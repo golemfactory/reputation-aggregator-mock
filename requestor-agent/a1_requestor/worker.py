@@ -1,6 +1,6 @@
 from datetime import timedelta
 import math
-from random import randint
+from random import randint, random
 from typing import Dict, List
 
 from primefac import isprime
@@ -74,7 +74,8 @@ async def worker(ctx: WorkContext, tasks):
         #   I'm not sure if this is possible?
         return
 
-    src_data = task.data
+    src_data, random_fail_factor = task.data
+
     command_args_str = " ".join(str(x) for x in sorted(src_data))
     command = ["/bin/sh", "-c", f"python3 -m primefac {command_args_str}"]
     timeout = timedelta(seconds=len(src_data) * 5)
@@ -94,6 +95,10 @@ async def worker(ctx: WorkContext, tasks):
     except Exception:
         ctx.emit(IncorrectResult)
         raise
+
+    if random_fail_factor > 100 * random():
+        ctx.emit(IncorrectResult)
+        raise Exception("Task randomly pseud-failed")
 
     task.accept_result()
 
