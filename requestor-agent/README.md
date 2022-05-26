@@ -31,10 +31,9 @@ python3 -m a1_requestor
                          # (check also offers_wait_timeout argument)
     --task-size     INT  # Higher number = longer task.
                          #   0 -> around 3-10 seconds (on the devnet-beta). This is mostly for development purposes.
-                         #   1 or more -> ~~ [(20s-150s) * task_size] on the devnet-beta. 
-                         #     E.g. task-size == 100 -> expect ~ 30min on the fastest providers.
-                         # NOTE:  This also influences the task timeout. Timeout is set to 600s * task_size.
-                         #        (this doesn't cover the time required to download the image). 
+                         #   1 or more -> ~~ [(30s-150s) * task_size] on the devnet-beta. 
+                         #     E.g. task-size == 50 -> expect ~ 30min on the fastest providers.
+                         # NOTE:  This also influences the task timeout, check --task-timeout-factor arg
                          # NOTE2: Currently there is some limit on the task-size (somewhere around 600-1000)
                          #        because task data is sent in a command, not a file. This can be easily fixed.
                          # NOTE3: The lower is the task-size, the higher is the variance of the total complexity
@@ -47,7 +46,7 @@ python3 -m a1_requestor
     --random-fail-factor  INT  # 0-100 % of tasks that will fail without any fault on the provider side)
                                # (this is intended strictly for development/testing), defaults to 0
     --task-timeout-factor INT  # Task will timeout after (task-size * task-timeout-factor). Defaults to 600. Sample values:
-                               #    30 - Only the fastest providers will succeed
+                               #    30 - Only the fastest providers will succeed (or maybe just no provider)
                                #   100 - Most of the devnet providers should work
                                #   200 - All devnet providers should work
                                # NOTE: these numbers might be far from exact, and might vary between runs (especially for

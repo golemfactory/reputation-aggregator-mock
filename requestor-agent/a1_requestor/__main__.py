@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from datetime import datetime
+from datetime import datetime, timedelta
 import pathlib
 import sys
 
@@ -31,7 +31,8 @@ async def main(golem, *, num_providers, task_size, random_fail_factor, task_time
         tasks = [Task(data=(task_data, random_fail_factor, task_timeout_factor)) for _ in range(num_providers)]
 
         num_tasks = 0
-        async for _ in golem.execute_tasks(worker, tasks, payload, max_workers=num_providers):
+        executor_timeout = timedelta(hours=3)
+        async for _ in golem.execute_tasks(worker, tasks, payload, timeout=executor_timeout, max_workers=num_providers):
             num_tasks += 1
             print(f"{num_tasks} out of {num_providers} planned providers tested")
 
