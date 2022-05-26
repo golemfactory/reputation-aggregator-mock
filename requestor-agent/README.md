@@ -34,10 +34,10 @@ python3 -m a1_requestor
                          #   1 or more -> ~~ [(20s-150s) * task_size] on the devnet-beta. 
                          #     E.g. task-size == 100 -> expect ~ 30min on the fastest providers.
                          # NOTE:  This also influences the task timeout. Timeout is set to 600s * task_size.
-                         #        (this doesn't cover the time required to download the image). There is a plan
-                         #        to make it a CLI arg, so that we could select fastest providers this way.
+                         #        (this doesn't cover the time required to download the image). 
                          # NOTE2: Currently there is some limit on the task-size (somewhere around 600-1000)
                          #        because task data is sent in a command, not a file. This can be easily fixed.
+                         # NOTE3: The lower is the task-size, the higher is the variance of the total complexity
     --num-providers INT  # End execution after this number of **successful** task runs.
                          # We'll always run only a single task per provider.
 
@@ -46,6 +46,12 @@ python3 -m a1_requestor
                                # Defaults to 60.
     --random-fail-factor  INT  # 0-100 % of tasks that will fail without any fault on the provider side)
                                # (this is intended strictly for development/testing), defaults to 0
+    --task-timeout-factor INT  # Task will timeout after (task-size * task-timeout-factor). Defaults to 600. Sample values:
+                               #    30 - Only the fastest providers will succeed
+                               #   100 - Most of the devnet providers should work
+                               #   200 - All devnet providers should work
+                               # NOTE: these numbers might be far from exact, and might vary between runs (especially for
+                               #       low task-size)
 
     #   Common yapapi args that have defaults & work just as in any yapapi example
     --subnet-tag

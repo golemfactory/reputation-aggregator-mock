@@ -79,11 +79,11 @@ async def worker(ctx: WorkContext, tasks):
         #   I'm not sure if this is possible?
         return
 
-    src_data, random_fail_factor = task.data
+    src_data, random_fail_factor, task_timeout_factor = task.data
 
     command_args_str = " ".join(str(x) for x in sorted(src_data))
     command = ["/bin/sh", "-c", f"python3 -m primefac {command_args_str}"]
-    timeout = timedelta(seconds=len(src_data) * 600)
+    timeout = timedelta(seconds=len(src_data) * task_timeout_factor)
 
     script = ctx.new_script(timeout=timeout)
     result = script.run(*command)
