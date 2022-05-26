@@ -14,6 +14,9 @@ IMAGE_DOWNLOAD_TIMEOUT = timedelta(minutes=3)
 #   Python 3.8-alpine + primefac
 IMAGE_HASH = "1ff5f0fe16b6a1f3fc7a01eba370d10845b21f3745e25eeba6dc5340"
 
+#   Task that is used if task_data == 0
+DEBUG_TASK_DATA = {98320228208849205109158097780301701: [403168042031, 421910160769, 578011918859]}
+
 
 class TaskTimeout(ActivityEvent):
     pass
@@ -23,8 +26,8 @@ class IncorrectResult(ActivityEvent):
     pass
 
 
-def get_random_primes(cnt, max_size):
-    """Return CNT prime numbers in range (2, MAX_SIZE)"""
+def get_random_primes(cnt, min_size, max_size):
+    """Return CNT prime numbers in range (MIN_SIZE, MAX_SIZE)"""
     result = []
     while len(result) < cnt:
         x = randint(2, max_size)
@@ -35,11 +38,13 @@ def get_random_primes(cnt, max_size):
 
 def prepare_task_data(task_size: int) -> Dict[int, List[int]]:
     """Create a random map {integer -> list_of_prime_factors} with TASK_SIZE elements"""
+    if task_size < 1:
+        return DEBUG_TASK_DATA
+
     src_data = {}
     for i in range(task_size):
-        #   With this params it takes ~~ 1s to factorize a single number on the devnet-beta,
-        #   so task_size ~~ time_in_seconds.
-        primes = get_random_primes(8, 10**10)
+        #   With this params it takes ~~ 10-150s to factorize a single number on the devnet-beta,
+        primes = get_random_primes(3, 10**15, 10**18)
         num = math.prod(primes)
         if num not in src_data:
             src_data[num] = sorted(primes)
@@ -78,7 +83,7 @@ async def worker(ctx: WorkContext, tasks):
 
     command_args_str = " ".join(str(x) for x in sorted(src_data))
     command = ["/bin/sh", "-c", f"python3 -m primefac {command_args_str}"]
-    timeout = timedelta(seconds=len(src_data) * 5)
+    timeout = timedelta(seconds=len(src_data) * 600)
 
     script = ctx.new_script(timeout=timeout)
     result = script.run(*command)

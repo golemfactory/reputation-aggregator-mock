@@ -29,11 +29,14 @@ python3 -m a1_requestor
                          # NOTE: we'll always accept offers from providers without known reputation
     --min-offers    INT  # How many offers we should gather before we start selecting providers 
                          # (check also offers_wait_timeout argument)
-    --task-size     INT  # Higher number = longer task. On the devnet-beta this is more-or-less
-                         # the number of seconds required to perform the computations.
-                         # NOTE:  This also influences the task timeout. Timeout is set to 5 * task_size.
-                         #        (this doesn't cover the time required to download the image)
-                         # NOTE2: Currently there is some limit on the task-size (~400, exact number may vary between runs)
+    --task-size     INT  # Higher number = longer task.
+                         #   0 -> around 3-10 seconds (on the devnet-beta). This is mostly for development purposes.
+                         #   1 or more -> ~~ [(20s-150s) * task_size] on the devnet-beta. 
+                         #     E.g. task-size == 100 -> expect ~ 30min on the fastest providers.
+                         # NOTE:  This also influences the task timeout. Timeout is set to 600s * task_size.
+                         #        (this doesn't cover the time required to download the image). There is a plan
+                         #        to make it a CLI arg, so that we could select fastest providers this way.
+                         # NOTE2: Currently there is some limit on the task-size (somewhere around 600-1000)
                          #        because task data is sent in a command, not a file. This can be easily fixed.
     --num-providers INT  # End execution after this number of **successful** task runs.
                          # We'll always run only a single task per provider.
