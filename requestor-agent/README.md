@@ -13,7 +13,7 @@ Key elements:
 ##  Installation
 
 ```
-pip3 install git+https://github.com/golemfactory/reputation-aggregator-mock.git@jb/a1-requestor-agent#subdirectory=requestor-agent
+pip3 install git+https://github.com/golemfactory/reputation-aggregator-mock.git@old-task-size#subdirectory=requestor-agent
 ```
 
 ##  Usage
