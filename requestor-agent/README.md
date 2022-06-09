@@ -1,0 +1,60 @@
+#   Alpha 1 requestor agent
+
+##  General purpose
+
+Run some useless tasks on the Golem network.
+
+Key elements:
+
+*   We pay only for tasks correctly executed
+*   We use the global A1 reputation to filter out the low-performing providers
+*   Task weight varies between runs
+
+##  Installation
+
+```
+pip3 install git+https://github.com/golemfactory/reputation-aggregator-mock.git@jb/a1-requestor-agent#subdirectory=requestor-agent
+```
+
+##  Usage
+
+```
+python3 -m a1_requestor
+    #   Important required args
+    --repu-factor   INT  # Positive int, the higher the factor the higher is the chance we'll refuse the offer
+                         # because of the reputation. Sample values:
+                         #   0    -> we don't care about the reputation
+                         #   100  -> worst provider has micro-chance, median 0.25, best 1
+                         #   1000000 -> best provider still 1, but others have a reaaaaly low chance (although not 0)
+                         # NOTE: we'll always accept offers from providers without known reputation
+    --min-offers    INT  # How many offers we should gather before we start selecting providers 
+                         # (check also offers_wait_timeout argument)
+    --task-size     INT  # Higher number = longer task.
+                         #   0 -> around 3-10 seconds (on the devnet-beta). This is mostly for development purposes.
+                         #   1 or more -> ~~ [(30s-150s) * task_size] on the devnet-beta. 
+                         #     E.g. task-size == 50 -> expect ~ 30min on the fastest providers.
+                         # NOTE:  This also influences the task timeout, check --task-timeout-factor arg
+                         # NOTE2: Currently there is some limit on the task-size (somewhere around 600-1000)
+                         #        because task data is sent in a command, not a file. This can be easily fixed.
+                         # NOTE3: The lower is the task-size, the higher is the variance of the total complexity
+    --num-providers INT  # End execution after this number of **successful** task runs.
+                         # We'll always run only a single task per provider.
+
+    #   Optional 
+    --offers-wait-timeout INT  # After this time (seconds) stop waiting for min-offers even if we didn't reach the treshold
+                               # Defaults to 60.
+    --random-fail-factor  INT  # 0-100 % of tasks that will fail without any fault on the provider side)
+                               # (this is intended strictly for development/testing), defaults to 0
+    --task-timeout-factor INT  # Task will timeout after (task-size * task-timeout-factor). Defaults to 600. Sample values:
+                               #    30 - Only the fastest providers will succeed (or maybe just no provider)
+                               #   100 - Most of the devnet providers should work
+                               #   200 - All devnet providers should work
+                               # NOTE: these numbers might be far from exact, and might vary between runs (especially for
+                               #       low task-size)
+
+    #   Common yapapi args that have defaults & work just as in any yapapi example
+    --subnet-tag
+    --payment-network
+    --payment-driver
+    --log-file
+```
