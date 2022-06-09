@@ -6,7 +6,7 @@ from decimal import Decimal
 from random import random
 
 from yapapi.strategy import MarketStrategy, LeastExpensiveLinearPayuMS
-from yapapi.events import ProposalReceived, TaskAccepted
+from yapapi.events import ProposalReceived, TaskAccepted, AgreementRejected
 from yapapi.props import com
 
 from .worker import TaskTimeout, IncorrectResult
@@ -40,6 +40,7 @@ class AlphaRequestorStrategy(MarketStrategy):
         self._failed_activities = set()
         self._payable_agreements = set()
         self._scored_providers = set()
+        self._providers_rejecting_agreements = set()
 
         self._wait_for_offers_task: Optional[asyncio.Task] = None
 
@@ -60,6 +61,9 @@ class AlphaRequestorStrategy(MarketStrategy):
             self._wait_for_offers_task = asyncio.create_task(self._wait_for_offers())
         await asyncio.wait_for(self._wait_for_offers_task, None)
 
+        if offer.issuer in self._providers_rejecting_agreements:
+            return -1
+
         #   Ensure we have no more than a single agreement with the same provider
         #   NOTE: This also prevents us from creating multiple agreements from the same offer
         #         because offer is rescored after agreement ended.
@@ -77,7 +81,7 @@ class AlphaRequestorStrategy(MarketStrategy):
 
         return await self._reputation_score(offer.issuer)
 
-    def event_consumer(self, event: Union[ProposalReceived, TaskTimeout, IncorrectResult, TaskAccepted]) -> None:
+    def event_consumer(self, event: Union[ProposalReceived, TaskTimeout, IncorrectResult, TaskAccepted, AgreementRejected]) -> None:
         if isinstance(event, ProposalReceived):
             self._offers.add(event.proposal)
             if event.proposal.issuer not in self._provider_scores:
@@ -87,6 +91,8 @@ class AlphaRequestorStrategy(MarketStrategy):
         elif isinstance(event, TaskAccepted):
             agreement_id = event.agreement.id
             self._payable_agreements.add(agreement_id)
+        elif isinstance(event, AgreementRejected):
+            self._providers_rejecting_agreements.add(event.provider_id)
         else:
             activity_id = event.activity.id
             self._failed_activities.add(activity_id)

@@ -64,7 +64,7 @@ if __name__ == "__main__":
     )
     golem.add_event_consumer(
         strategy.event_consumer,
-        ["ProposalReceived", TaskTimeout, IncorrectResult, "TaskAccepted"]
+        ["ProposalReceived", TaskTimeout, IncorrectResult, "TaskAccepted", "AgreementRejected"]
     )
 
     run_golem_example(
